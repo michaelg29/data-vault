@@ -10,7 +10,7 @@ Variable Name | Purpose | Source
 
 File Name | Purpose | Organization | Encryption
 --------- | ------- | ------------ | ----------
-iv.dv | Store IV's and salts | <ul><li>Blocks of 16 bytes</li></ul><ol><li>userPwdSalt</li><li>dataKeyIV</li><li>dataIV</li><li>mapIV</li><li>btreeIV</li><li>categoryIV</li></ol> | none
+iv.dv | Store IV's and salts | <ul><li>Blocks of 16 bytes</li></ul><ol><li>userPwdSalt</li><li>kekSalt</li><li>dataKeyIV</li><li>dataIV</li><li>mapIV</li><li>btreeIV</li><li>categoryIV</li></ol> | none
 **data.dv** | Store encrypted data | <ul><li>blocks of 16 bytes for AES</li><ul><li>data in first 12 bytes</li><ul><li>entry: `short categoryId`, `string name`, `'\0'`</li></ul><li>`int continuationBlock` in last 4 bytes</ul></ul> | `AES_256(k = dataKey, iv = dataIV)`
 map.dv | Map entry names to entry id | <ul><li>List of entries</li><li>entry: `string name`, `'\0'`, `int entryId`</li></ul> | `AES_256(k = dataKey, iv = mapIV)`
 btree.dv | Map entry ids to initial block in data.dv | <ul><li>List of entries</li><li>entry: `int numericalId`, `int initialBlock`</li></ul> | `AES_256(k = dataKey, iv = btreeIV)`
@@ -22,19 +22,163 @@ datakey.dv | Store the data key | <ul><li>32 bytes are `dataKey`</li></ul> | `AE
 
 # Sequences
 
-## Login
-### Goal: generate keys; load, decrypt, and parse maps
+## Create Account
+#### Goal: hash password, generate salts/ivs and data key, create data files
 ```
+Input: userPwd
 ```
 
-## Logout
-### Goal: save; free memory
+1) Create all files
+    iv.dv
+    data.dv
+    map.dv
+    btree.dv
+    categories.dv
+    pwd.dv
+    datakey.dv
+2) Generate salts and IV's, output into iv.dv
 ```
+    userPwdSalt = randomBytes(16)
+    kekSalt = randomBytes(16)
+    dataKeyIV = randomBytes(16)
+    dataIV = randomBytes(16)
+    mapIV = randomBytes(16)
+    btreeIV = randomBytes(16)
+    categoryIV = randomBytes(16)
+    write("iv.dv", userPwdSalt, kekSalt, dataKeyIV, dataIV, mapIV, btreeIV, categoryIV)
+```
+3) Process userPwd and generate dataKey
+```
+    write("pwd.dv", SHA3_512(salt = userPwdSalt, txt = userPwd))
+    dataKey = randomBytes(16)
+    keyEncryptionKey = PBKDF2(k = userPwd, salt = kekSalt, dklen = 32)
+    write("datakey.dv", AESenc_256(k = keyEncryptionKey, txt = dataKey, iv = dataKeyIV))
+```
+
+## Login
+#### Goal: generate keys; load, decrypt, and parse maps
+```
+Input: userPwd
+```
+
+1) Read salts and iv's from iv.dv
+```
+    // sequential list
+    randList = content("iv.dv")
+    userPwdSalt = randList[0:16)
+    kekSalt = randList[16:32)
+    dataKeyIV = randList[32:48)
+    dataIV = randList[48:64)
+    mapIV = randList[64:80)
+    btreeIV = randList[80:96)
+    categoryIV = randList[96:112)
+```
+2) Validate userPwd
+```
+    // compare hashes
+    inputHash = SHA3_512(salt = userPwdSalt, txt = userPwd)
+    assertEquals(inputHash, contents("pwd.dv"))
+```
+3) Decrypt dataKey
+```
+    // derive key encryption key from userPwd
+    keyEncryptionKey = PBKDF2(k = userPwd, salt = kekSalt, dklen = 32)
+    free(userPwd)
+    // decrypt dataKey
+    dataKey = AESdec_256(k = keyEncryptionKey, txt = contents("dataKey.dv"), iv = dataKeyIV)
+    free(keyEncryptionKey)
+```
+4) Generate AES key schedule
+```
+    // save in memory for use throughout program when decrypting data
+    keySchedule = AESgenKeySchedule_256(k = dataKey)
+```
+5) Allocate memory to maps
+```
+    nameIdMap = avl_tree()
+    idIdxMap = btree()
+    categoryIdMap = avl_tree()
+```
+6) Call the Load sequence
+
+## Logout
+#### Goal: save; free memory
+1) Call the Save sequence
+2) free memory
+```
+    free(dataKey)
+    free(keySchedule)
+    btree_free(entryMap)
+    avl_free(nameMap)
+    avl_free(categoryMap)
+    maxId = 0
+```
+
+## Load
+#### Goal: decrypt and parse maps
+1) Decrypt and load btree.dv
+```
+    btreeStr = AESdec_256(k = dataKey, txt = contents("btree.dv"), iv = btreeIV)
+    for each entry
+        // parse 2 4-byte numerical values for id and initialBlock
+        read 4 chars
+            id = val({chars}, base = 256)
+            maxId = MAX(id, maxId)
+        read 4 chars
+            initialBlock = val({chars}, base = 256)
+        // insert key value pair
+        insert (id, initialBlock) into idIdxMap
+```
+2) Decrypt and load map.dv
+```
+    mapStr = AESdec_256(k = dataKey, txt = contents("map.dv"), iv = mapIV)
+    for each entry
+        read chars until \0
+            name = {chars}
+        // parse 4 byte unsigned numerical value for id
+        read 4 chars
+            id = val({chars}, base = 256)
+        // insert key value pair
+        insert (name, id) into nameIdMap
+```
+3) Decrypt and load categories.dv
+```
+    categoriesStr = AESdec_256(k = dataKey, txt = contents("categories.dv"), iv = categoryIV)
+    for each entry
+        // parse 1 byte unsigned numerical value for id
+        read 1 char
+            id = val(char, base = 256)
+        read chars until \0
+            name = {chars}
+        // insert key value pair
+        insert (name, id) into categoryIdMap
 ```
 
 ## Save
-### Goal: stringify, encrypt, and save maps
+#### Goal: stringify, encrypt, and save maps
+1) Stringify and encrypt nameMap
 ```
+    for each entry
+        // stringify id and concatenate to name
+        entryStr = entry.name, \0, smallEndian(entry.id)
+        concatenate entryStr to nameMapStr
+    write AESenc_256(k = dataKey, txt = entryStr, iv = mapIV) into map.dv
+```
+2) Stringify and encrypt entryMap
+```
+    for each entry
+        // stringify id and initial block and concatenate
+        entryStr = smallEndian(entry.id), smallEndian(entry.initialBlock)
+        concatenate entryStr to btreeStr
+    write AESenc_256(k = dataKey, txt = btreeStr, iv = btreeIV) into btree.dv
+```
+3) Stringify and encrypt cateogriesMap
+```
+    for each entry
+        // stringify id and concatenate to name
+        entryStr = smallEndian(entry.id), entry.name, \0
+        concatenate entryStr to categoriesStr
+    write AESenc_256(k = dataKey, txt = categoriesStr, iv = categoriesIV) into categories.dv
 ```
 
 ## Create entry
