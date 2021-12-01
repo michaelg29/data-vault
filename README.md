@@ -180,6 +180,10 @@ Input: userPwd
         concatenate entryStr to categoriesStr
     write AESenc_256(k = dataKey, txt = categoriesStr, iv = categoriesIV) into categories.dv
 ```
+4) Write salts
+```
+    write userPwdSalt + kekSalt + dataKeyIV + dataIV + mapIV + btreeIV + categoryIV into iv.dv
+```
 
 ## Create entry
 ```
