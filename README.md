@@ -187,6 +187,23 @@ Input: userPwd
 
 ## Create entry
 ```
+Input: name
+```
+
+1) Insert into name map
+```
+    insert (name, ++maxId) into nameIdMap
+```
+2) Create initial block
+```
+    initBlock = filelen(data.dv) / 16 + 1
+    block = 0, randomBytes(11), smallEndian(0)
+    increment dataIV by initBlock
+    append AESenc_256(k = dataKey, txt = block, iv = dataIV) to data.dv
+```
+3) Insert into index map
+```
+    insert (maxId, initBlock) into idIdxMap
 ```
 
 ## Delete entry
@@ -197,7 +214,57 @@ Input: userPwd
 ```
 ```
 
-## Create/Modify entry data
+## Create entry data
+```
+Input: name, category, new data
+```
+
+1) Find the category id
+```
+    catId = categoryIdMap(category)
+    if catId = 0
+        catId = ++maxCatId
+        insert (category, catId) into categoryIdMap
+```
+2) Find the entry id
+```
+    id = nameIdMap(name)
+    if id = 0
+        // did not find name
+        id = call Create Entry sequence
+```
+3) Write data
+```
+    previousBlock = 0
+    currentBlock = idIdxMap(id)
+    while true
+        increment dataIV by currentBlock - previousBlock
+        blk = AESdec_256(k = dataKey, txt = block(data.dv, currentBlock), iv = dataIV)
+        modified = false
+
+        for i in [0:12)
+            cat = blk[i]
+            if cat = 0
+                blk[i] = catId
+
+                if i != 11
+                    write new data into blk[i+1:12)
+                    modified = true
+                if more data
+                    nextBlock = filelen(data.dv) / 16 + 1
+                    blk[12:16) = smallEndian(nextBlock)
+
+        if modified
+            write AES_enc(k = dataKey, txt = blk, iv = dataIV) into data.dv at currentBlock
+
+        if nextBlock != 0
+            previousBlock = currentBlock
+            currentBlock = nextBlock
+        else
+            break
+```
+
+## Modify entry data
 ```
 ```
 
