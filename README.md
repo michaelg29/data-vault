@@ -212,6 +212,59 @@ Input: name
 
 ## Access entry
 ```
+Input: name, category
+```
+
+1) Find the category id
+```
+    catId = categoryIdMap(category)
+    if catId = 0
+        return NULL
+```
+2) Find the entry id
+```
+    id = nameIdMap(name)
+    if id = 0
+        return NULL
+```
+3) Read entry data
+```
+    previousBlock = 0
+    currentBlock = idIdxMap(id)
+
+    while true
+        increment dataIV by currentBlock - previousBlock
+        blk = AESdec_256(k = dataKey, txt = block(data.dv, currentBlock), iv = dataIV)
+        completed = false
+
+        for i in [0:12)
+            if curCat = 0
+                curCat = blk[i]
+                id curCat = 0
+                    return NULL
+            else
+                read {chars} until 0 or end
+                if curCat = catId
+                    // add characters to string
+                    retChars += {chars}
+                    if blk[i] = 0
+                        completed = true
+                        break
+                else
+                    continue
+
+        if completed
+            break
+        
+        previousBlock = currentBlock
+        currentBlock = val(input[12:16), base = 256)
+        if currentBlock = 0
+            break
+
+    if retChars
+        return retChars
+    else
+        return NULL
 ```
 
 ## Create entry data
