@@ -176,7 +176,7 @@ Input: userPwd
 ```
     for each entry
         // stringify id and concatenate to name
-        entryStr = smallEndian(entry.id), entry.name, \0
+        entryStr = entry.name, \0, smallEndian(entry.id)
         concatenate entryStr to categoriesStr
     write AESenc_256(k = dataKey, txt = categoriesStr, iv = categoriesIV) into categories.dv
 ```
