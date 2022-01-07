@@ -1,6 +1,6 @@
 #ifndef MEM_H
-#define MEM_C
+#define MEM_H
 
 void conditionalFree(void *val, void (*freeFunc)(void *val));
 
-#endif
+#endif // MEM_H
