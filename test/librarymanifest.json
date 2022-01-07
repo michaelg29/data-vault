@@ -1,0 +1,64 @@
+{
+    "dstRoot": "C:/src/data-vault",
+    "copyManifest": [
+        {
+            "src": "C:/src/yt-challenges/22 - Generic Lists",
+            "dst": "src/lib/ds",
+            "inclusions": [
+                "dynamicarray.h",
+                "dynamicarray.c"
+            ]
+        },
+        {
+            "src": "C:/src/yt-challenges/26 - AVL Trees",
+            "dst": "src/lib/ds",
+            "inclusions": [
+                "avl.h",
+                "avl.c"
+            ]
+        },
+        {
+            "src": "C:/src/yt-challenges/27 - String Streams",
+            "dst": "src/lib/ds",
+            "inclusions": [
+                "strstream.h",
+                "strstream.c"
+            ]
+        },
+        {
+            "src": "C:/src/yt-challenges/30 - B-Tree",
+            "dst": "src/lib/ds",
+            "inclusions": [
+                "btree.h",
+                "btree.c"
+            ]
+        },
+        {
+            "src": "C:/src/cmathematics/cmathematics",
+            "dst": "src/lib/cmathematics",
+            "inclusions": [
+                "cmathematics.h",
+                "cmathematics.c",
+                "lib/arrays.h",
+                "lib/arrays.c",
+                "lib/strstream.h",
+                "data/encryption/aes.h",
+                "data/encryption/aes.c",
+                "data/hashing/hmac.h",
+                "data/hashing/hmac.c",
+                "data/hashing/pbkdf.h",
+                "data/hashing/pbkdf.c",
+                "data/hashing/sha.h",
+                "data/hashing/sha.c",
+                "data/hashing/sha1.h",
+                "data/hashing/sha1.c",
+                "data/hashing/sha2.h",
+                "data/hashing/sha2.c",
+                "data/hashing/sha3.h",
+                "data/hashing/sha3.c",
+                "util/numio.h",
+                "util/numio.c"
+            ]
+        }
+    ]
+}
