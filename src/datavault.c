@@ -6,6 +6,8 @@
 
 #include "lib/cmathematics/cmathematics.h"
 
+#include "lib/util/mem.h"
+
 void dv_init(dv_app *dv)
 {
     // initialize state
@@ -29,8 +31,5 @@ void dv_kill(dv_app *dv)
     memset(dv->aes_key_schedule, 0, (AES_256_NR + 1) * AES_BLOCK_LEN);
 
     // free pointers
-    if (dv->random)
-    {
-        free(dv->random);
-    }
+    conditionalFree(dv->random, free);
 }
