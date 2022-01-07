@@ -48,15 +48,7 @@ int dv_createAccount(dv_app *dv, unsigned char *userPwd, int n)
     sha_free(hashCtx);
 
     // write to file
-    file_struct pwdFile;
-
-    if (file_open(&pwdFile, "pwd.dv", "wb"))
-    {
-        file_write(&pwdFile, hash, sha_getRetLenIdx(SHA3_512));
-        file_close(&pwdFile);
-        free(hash);
-    }
-    else
+    if (!file_writeContents(pwd_fp, hash, sha_getRetLenIdx(SHA3_512)))
     {
         free(hash);
         return DV_FILE_DNE;
@@ -80,13 +72,7 @@ int dv_createAccount(dv_app *dv, unsigned char *userPwd, int n)
                 &encDataKey);
 
     // write encrypted data key
-    file_struct dkFile;
-    if (file_open(&dkFile, "dk.dv", "wb"))
-    {
-        file_write(&dkFile, encDataKey, DV_KEYLEN);
-        file_close(&dkFile);
-    }
-    else
+    if (!file_writeContents(dk_fp, encDataKey, DV_KEYLEN))
     {
         return DV_FILE_DNE;
     }
