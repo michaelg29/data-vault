@@ -7,9 +7,10 @@
 #define DV_KEYLEN 32
 
 #define DV_SUCCESS 0
-#define DV_FILE_DNE 1
-#define DV_INVALID_INPUT 2
-#define DV_LOGGED_OUT 3
+#define DV_MEM_ERR 1
+#define DV_FILE_DNE 2
+#define DV_INVALID_INPUT 3
+#define DV_LOGGED_OUT 4
 
 typedef struct
 {

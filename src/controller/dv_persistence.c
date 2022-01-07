@@ -17,16 +17,20 @@ const char *dk_fp = "dk.dv";
 
 int dv_initFiles(unsigned char *random)
 {
+    bool ret = true;
+
     // create files
-    file_create(nameIdMap_fp);
-    file_create(idIdxMap_fp);
-    file_create(categoryIdMap_fp);
+    ret = file_create(nameIdMap_fp);
+    ret = file_create(idIdxMap_fp);
+    ret = file_create(categoryIdMap_fp);
 
     // write into iv file
-    file_writeContents(iv_fp, random, 7 << 4);
+    ret = file_writeContents(iv_fp, random, 7 << 4);
 
     // write dataIV into data.dv
-    file_writeContents(data_fp, random, 16);
+    ret = file_writeContents(data_fp, random, 16);
+
+    return ret ? DV_SUCCESS : DV_FILE_DNE;
 }
 
 int dv_load(dv_app *dv)
