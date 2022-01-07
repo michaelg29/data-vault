@@ -119,7 +119,7 @@ int dv_login(dv_app *dv, unsigned char *userPwd, int n)
         dv_init(dv);
 
         // read salts/ivs
-        if (!(dv->random = file_readContents("iv.dv")))
+        if (!(dv->random = file_readContents(iv_fp)))
         {
             retCode = DV_FILE_DNE;
             break;
@@ -137,7 +137,7 @@ int dv_login(dv_app *dv, unsigned char *userPwd, int n)
 
         // read expected value
         file_struct pwdFile;
-        if (file_open(&pwdFile, "pwd.dv", "rb"))
+        if (file_open(&pwdFile, pwd_fp, "rb"))
         {
             // read file
             expected = file_read(&pwdFile, sha_getRetLenIdx(SHA3_512));
