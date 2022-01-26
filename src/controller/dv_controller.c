@@ -6,6 +6,7 @@
 #include "../lib/cmathematics/util/numio.h"
 #include "../lib/cmathematics/data/encryption/aes.h"
 #include "../lib/cmathematics/data/hashing/sha.h"
+#include "../lib/cmathematics/data/hashing/sha3.h"
 #include "../lib/cmathematics/data/hashing/pbkdf.h"
 #include "../lib/cmathematics/lib/arrays.h"
 
@@ -35,7 +36,7 @@ int dv_createAccount(dv_app *dv, unsigned char *userPwd, int n)
     int retCode = DV_SUCCESS;
 
     unsigned char *random = NULL;
-    void *hashCtx = NULL;
+    sha3_context *hashCtx = NULL;
     unsigned char *hash = NULL;
     unsigned char *dataKey = NULL;
     unsigned char *kek = NULL;
@@ -58,16 +59,16 @@ int dv_createAccount(dv_app *dv, unsigned char *userPwd, int n)
          * HASH userPwd
          */
         // generate hash
-        hashCtx = sha_initContext(SHA3_512);
-        sha_update(SHA3_512, hashCtx, userPwd, n);
-        sha_update(SHA3_512, hashCtx, random + userPwdSalt_offset, 16); // update with salt
-        sha_digest(SHA3_512, hashCtx, &hash);
-        sha_free(hashCtx);
-
+        sha3_initContext(hashCtx, SHA3_512);
+        sha3_update(hashCtx, userPwd, n);
+        sha3_update(hashCtx, random + userPwdSalt_offset, 16); // update with salt
+        sha3_digest(hashCtx, &hash);
+        
         // write to file
-        if (!file_writeContents(pwd_fp, hash, sha_getRetLenIdx(SHA3_512)))
+        if (!file_writeContents(pwd_fp, hash, hashCtx->ret_len))
         {
             retCode = DV_FILE_DNE;
+            break;
         }
 
         /**
@@ -89,6 +90,7 @@ int dv_createAccount(dv_app *dv, unsigned char *userPwd, int n)
         if (!file_writeContents(dk_fp, encDataKey, DV_KEYLEN))
         {
             retCode = DV_FILE_DNE;
+            break;
         }
     } while (false);
 
@@ -106,7 +108,7 @@ int dv_login(dv_app *dv, unsigned char *userPwd, int n)
 {
     int retCode = DV_SUCCESS;
 
-    void *hashCtx = NULL;
+    sha3_context *hashCtx = NULL;
     unsigned char *hash = NULL;
     char *expected = NULL;
     unsigned char *kek;
@@ -129,24 +131,24 @@ int dv_login(dv_app *dv, unsigned char *userPwd, int n)
          * VALIDATE INPUT PASSWORD
          */
         // generate input hash
-        hashCtx = sha_initContext(SHA3_512);
-        sha_update(SHA3_512, hashCtx, userPwd, n);
-        sha_update(SHA3_512, hashCtx, dv->random + userPwdSalt_offset, 16); // concatenate salt
-        sha_digest(SHA3_512, hashCtx, &hash);
-        sha_free(hashCtx);
+        sha3_initContext(hashCtx, SHA3_512);
+        sha3_update(hashCtx, userPwd, n);
+        sha3_update(hashCtx, dv->random + userPwdSalt_offset, 16); // concatenate salt
+        sha3_digest(hashCtx, &hash);
 
         // read expected value
         file_struct pwdFile;
         if (file_open(&pwdFile, pwd_fp, "rb"))
         {
             // read file
-            expected = file_read(&pwdFile, sha_getRetLenIdx(SHA3_512));
+            expected = file_read(&pwdFile, hashCtx->ret_len);
 
             // compare
-            if (memcmp(hash, expected, sha_getRetLenIdx(SHA3_512)))
+            if (memcmp(hash, expected, hashCtx->ret_len))
             {
                 dv_kill(dv);
-                return DV_INVALID_INPUT;
+                retCode = DV_INVALID_INPUT;
+                break;
             }
             // else succeeded
 
@@ -154,7 +156,8 @@ int dv_login(dv_app *dv, unsigned char *userPwd, int n)
         }
         else
         {
-            return DV_FILE_DNE;
+            retCode = DV_FILE_DNE;
+            break;
         }
 
         /**
