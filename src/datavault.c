@@ -19,6 +19,13 @@ void dv_init(dv_app *dv)
 
     // initialize pointers
     dv->random = NULL;
+
+    dv->nameIdMap = NULL;
+    dv->idIdxMap.root = NULL;
+    dv->catIdMap = NULL;
+
+    dv->maxEntryId = 0;
+    dv->maxCatId = 0;
 }
 
 void dv_kill(dv_app *dv)
@@ -32,4 +39,17 @@ void dv_kill(dv_app *dv)
 
     // free pointers
     conditionalFree(dv->random, free);
+    dv->random = NULL;
+
+    // free maps
+    avl_freeKey(dv->nameIdMap);
+    dv->nameIdMap = NULL;
+
+    btree_free(&dv->idIdxMap);
+
+    avl_freeKey(dv->catIdMap);
+    dv->catIdMap = NULL;
+
+    dv->maxEntryId = 0;
+    dv->maxCatId = 0;
 }
