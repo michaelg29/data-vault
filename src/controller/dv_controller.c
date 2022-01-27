@@ -36,7 +36,7 @@ int dv_createAccount(dv_app *dv, unsigned char *userPwd, int n)
     int retCode = DV_SUCCESS;
 
     unsigned char *random = NULL;
-    sha3_context *hashCtx = NULL;
+    sha3_context hashCtx;
     unsigned char *hash = NULL;
     unsigned char *dataKey = NULL;
     unsigned char *kek = NULL;
@@ -59,13 +59,13 @@ int dv_createAccount(dv_app *dv, unsigned char *userPwd, int n)
          * HASH userPwd
          */
         // generate hash
-        sha3_initContext(hashCtx, SHA3_512);
-        sha3_update(hashCtx, userPwd, n);
-        sha3_update(hashCtx, random + userPwdSalt_offset, 16); // update with salt
-        sha3_digest(hashCtx, &hash);
+        sha3_initContext(&hashCtx, SHA3_512);
+        sha3_update(&hashCtx, userPwd, n);
+        sha3_update(&hashCtx, random + userPwdSalt_offset, 16); // update with salt
+        sha3_digest(&hashCtx, &hash);
         
         // write to file
-        if (!file_writeContents(pwd_fp, hash, hashCtx->ret_len))
+        if (!file_writeContents(pwd_fp, hash, hashCtx.ret_len))
         {
             retCode = DV_FILE_DNE;
             break;
@@ -92,10 +92,21 @@ int dv_createAccount(dv_app *dv, unsigned char *userPwd, int n)
             retCode = DV_FILE_DNE;
             break;
         }
+
+        if (DV_DEBUG)
+        {
+            printHexString(userPwd, n, "userPwd");
+            printHexString(random + userPwdSalt_offset, 16, "userPwdSalt");
+            printHexString(hash, hashCtx.ret_len, "userPwdHash");
+            printHexString(dataKey, DV_KEYLEN, "dataKey");
+            printHexString(random + kekSalt_offset, 16, "kekSalt");
+            printHexString(kek, DV_KEYLEN, "kek");
+            printHexString(random + dataKeyIV_offset, 16, "dataKeyIV");
+            printHexString(encDataKey, DV_KEYLEN, "encDataKey");
+        }
     } while (false);
 
     conditionalFree(random, free);
-    conditionalFree(hashCtx, sha_free);
     conditionalFree(hash, free);
     conditionalFree(dataKey, free);
     conditionalFree(kek, free);
@@ -108,7 +119,7 @@ int dv_login(dv_app *dv, unsigned char *userPwd, int n)
 {
     int retCode = DV_SUCCESS;
 
-    sha3_context *hashCtx = NULL;
+    sha3_context hashCtx;
     unsigned char *hash = NULL;
     char *expected = NULL;
     unsigned char *kek;
@@ -131,20 +142,20 @@ int dv_login(dv_app *dv, unsigned char *userPwd, int n)
          * VALIDATE INPUT PASSWORD
          */
         // generate input hash
-        sha3_initContext(hashCtx, SHA3_512);
-        sha3_update(hashCtx, userPwd, n);
-        sha3_update(hashCtx, dv->random + userPwdSalt_offset, 16); // concatenate salt
-        sha3_digest(hashCtx, &hash);
+        sha3_initContext(&hashCtx, SHA3_512);
+        sha3_update(&hashCtx, userPwd, n);
+        sha3_update(&hashCtx, dv->random + userPwdSalt_offset, 16); // concatenate salt
+        sha3_digest(&hashCtx, &hash);
 
         // read expected value
         file_struct pwdFile;
         if (file_open(&pwdFile, pwd_fp, "rb"))
         {
             // read file
-            expected = file_read(&pwdFile, hashCtx->ret_len);
+            expected = file_read(&pwdFile, hashCtx.ret_len);
 
             // compare
-            if (memcmp(hash, expected, hashCtx->ret_len))
+            if (memcmp(hash, expected, hashCtx.ret_len))
             {
                 dv_kill(dv);
                 retCode = DV_INVALID_INPUT;
@@ -187,7 +198,6 @@ int dv_login(dv_app *dv, unsigned char *userPwd, int n)
         retCode = dv_load(dv);
     } while (false);
 
-    conditionalFree(hashCtx, sha_free);
     conditionalFree(hash, free);
     conditionalFree(expected, free);
     conditionalFree(kek, free);

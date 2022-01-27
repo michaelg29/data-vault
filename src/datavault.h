@@ -12,6 +12,8 @@
 #define DV_INVALID_INPUT 3
 #define DV_LOGGED_OUT 4
 
+extern int DV_DEBUG;
+
 typedef struct
 {
     bool loggedIn;
