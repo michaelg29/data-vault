@@ -45,7 +45,7 @@ int dv_createAccount(dv_app *dv, unsigned char *userPwd, int n)
     do
     {
         // generate salts and IVs
-        if (!(random = newRandomBytes(0x7)))
+        if (!(random = newRandomBytes(0x70)))
         {
             retCode = DV_MEM_ERR;
             break;

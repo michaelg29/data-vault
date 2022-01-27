@@ -25,7 +25,7 @@ int dv_initFiles(unsigned char *random)
     ret = file_create(categoryIdMap_fp);
 
     // write into iv file
-    ret = file_writeContents(iv_fp, random, 7 << 4);
+    ret = file_writeContents(iv_fp, random, 0x70);
 
     // write dataIV into data.dv
     ret = file_writeContents(data_fp, random, 16);
