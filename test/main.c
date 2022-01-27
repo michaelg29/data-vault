@@ -15,9 +15,18 @@ int main()
 
     dv_init(&app);
 
+    printf("=====CREATE ACCOUNT=====\n");
     dv_createAccount(&app, "test", 4);
 
+    printf("=====LOGIN=====\n");
+    dv_login(&app, "test", 4);
+
+    printf("=====LOGOUT=====\n");
+    dv_logout(&app);
+
     dv_kill(&app);
+
+    printf("Goodbye, world!\n");
 
     return 0;
 }

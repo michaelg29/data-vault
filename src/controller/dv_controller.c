@@ -196,6 +196,19 @@ int dv_login(dv_app *dv, unsigned char *userPwd, int n)
 
         // call the load sequence
         retCode = dv_load(dv);
+
+        if (DV_DEBUG)
+        {
+            printHexString(userPwd, n, "userPwd");
+            printHexString(dv->random + userPwdSalt_offset, 16, "userPwdSalt");
+            printHexString(hash, hashCtx.ret_len, "userPwdHash");
+            printHexString(expected, hashCtx.ret_len, "expectedHash");
+            printHexString(dv->random + kekSalt_offset, 16, "kekSalt");
+            printHexString(kek, DV_KEYLEN, "kek");
+            printHexString(encDataKey, DV_KEYLEN, "encDataKey");
+            printHexString(dv->random + dataKeyIV_offset, 16, "dataKeyIV");
+            printHexString(dv->dataKey, DV_KEYLEN, "decDataKey");
+        }
     } while (false);
 
     conditionalFree(hash, free);
