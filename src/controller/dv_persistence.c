@@ -291,6 +291,12 @@ int dv_stringify(dv_app *dv, const char *path, unsigned int offset,
         strstream out = strstream_allocDefault();
         dumpFunc(structure, &out);
 
+        if (DV_DEBUG)
+        {
+            printf("%s\n", path);
+            printHexString(out.str, out.size, "out");
+        }
+
         // encrypt
         unsigned char *encOut = NULL;
         aes_encrypt_withSchedule(
@@ -311,6 +317,8 @@ int dv_stringify(dv_app *dv, const char *path, unsigned int offset,
     {
         return DV_FILE_DNE;
     }
+
+    return DV_SUCCESS;
 }
 
 int dv_save(dv_app *dv)
