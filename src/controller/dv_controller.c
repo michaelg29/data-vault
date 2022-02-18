@@ -63,7 +63,7 @@ int dv_createAccount(dv_app *dv, unsigned char *userPwd, int n)
         sha3_update(&hashCtx, userPwd, n);
         sha3_update(&hashCtx, random + userPwdSalt_offset, 16); // update with salt
         sha3_digest(&hashCtx, &hash);
-        
+
         // write to file
         if (!file_writeContents(pwd_fp, hash, hashCtx.ret_len))
         {
@@ -242,6 +242,88 @@ int dv_logout(dv_app *dv)
 
         dv_kill(dv);
     } while (false);
+
+    return DV_SUCCESS;
+}
+
+int dv_createEntry(dv_app *dv, const char *name)
+{
+    if (!dv->loggedIn)
+    {
+        return DV_LOGGED_OUT;
+    }
+
+    if (avl_get(dv->nameIdMap, (void *)name))
+    {
+        // entry already exists
+        return DV_INVALID_INPUT;
+    }
+
+    // make copy
+    int len = strlen(name);
+    char *nameCopy = malloc(len + 1);
+    strcpy(nameCopy, name);
+    nameCopy[len] = 0;
+
+    // insert copy into name map
+    dv->nameIdMap = avl_insert(dv->nameIdMap,
+                               nameCopy,
+                               (void *)(++dv->maxEntryId));
+
+    // create block
+    file_struct dataFile;
+    if (file_open(&dataFile, data_fp, "ab"))
+    {
+        // setup file
+        file_setBlockSize(&dataFile, 16);
+        // find end of file
+        int initBlock = dataFile.len >> 4; // len / 16
+
+        // populate block: 0, randomBytes(11), smallEndian(0)
+        unsigned char *emptyBlock = malloc(16);
+        memset(emptyBlock, 0, 16);
+        randomBytes(emptyBlock + 1, 11);
+
+        // increment counter
+        unsigned char *ivCopy = malloc(16);
+        memcpy(ivCopy, dv->random + dataIV_offset, 16);
+        aes_incrementCounter(ivCopy, initBlock);
+
+        // encrypt
+        unsigned char *enc;
+        aes_encrypt_withSchedule(emptyBlock, 16,
+                                 dv->aes_key_schedule, AES_256_NR,
+                                 AES_CTR,
+                                 ivCopy,
+                                 &enc);
+
+        // append to file
+        file_writeBlocks(&dataFile, enc, 1);
+
+        // insert into index map
+        btree_insert(&dv->idIdxMap, dv->maxEntryId, (void *)initBlock);
+
+        if (DV_DEBUG)
+        {
+            printf("entryId: %d\n", dv->maxEntryId);
+            printf("blockIdx: %d\n", initBlock);
+            printHexString(emptyBlock, 16, "block");
+            printHexString(ivCopy, 16, "ivInc");
+            printHexString(enc, 16, "encBlock");
+        }
+
+        // free variables
+        free(emptyBlock);
+        free(ivCopy);
+        free(enc);
+
+        // close file
+        file_close(&dataFile);
+    }
+    else
+    {
+        return DV_FILE_DNE;
+    }
 
     return DV_SUCCESS;
 }

@@ -21,6 +21,9 @@ int main()
     printf("=====LOGIN=====\n");
     dv_login(&app, "test", 4);
 
+    printf("=====CREATE ENTRY=====\n");
+    dv_createEntry(&app, "GitHub");
+
     printf("=====LOGOUT=====\n");
     dv_logout(&app);
 
