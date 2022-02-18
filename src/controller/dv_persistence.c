@@ -176,6 +176,7 @@ int dv_load(dv_app *dv)
     do
     {
         // decrypt and load nameIdMap
+        dv->nameIdMap = avl_createEmptyRoot(strkeycmp);
         if (retCode = dv_parse(
                 dv, nameIdMap_fp, nameIdIV_offset, readNameIdMap))
         {
@@ -183,6 +184,7 @@ int dv_load(dv_app *dv)
         }
 
         // decrypt and load idIdxMap
+        dv->idIdxMap = btree_new(5);
         if (retCode = dv_parse(
                 dv, idIdxMap_fp, idIdxIV_offset, readIdIdxMap))
         {
@@ -190,6 +192,7 @@ int dv_load(dv_app *dv)
         }
 
         // decrypt and load catIdMap
+        dv->catIdMap = avl_createEmptyRoot(strkeycmp);
         if (retCode = dv_parse(
                 dv, categoryIdMap_fp, catIdIV_offset, readCatIdMap))
         {
