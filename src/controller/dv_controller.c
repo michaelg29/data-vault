@@ -279,10 +279,10 @@ int dv_createEntry(dv_app *dv, const char *name)
         // find end of file
         int initBlock = dataFile.len >> 4; // len / 16
 
-        // populate block: 0, randomBytes(11), smallEndian(0)
+        // populate block: 0x22 * 12, smallEndian(0)
         unsigned char *emptyBlock = malloc(16);
-        memset(emptyBlock, 0, 16);
-        memset(emptyBlock + 1, 0x22, 11);
+        memset(emptyBlock, 0x22, 12);
+        memset(emptyBlock + 12, 0, 4);
 
         // increment counter
         unsigned char *ivCopy = malloc(16);
