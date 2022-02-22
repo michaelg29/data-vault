@@ -193,5 +193,6 @@ void file_close(file_struct *f)
     if (f->fp)
     {
         fclose(f->fp);
+        f->fp = NULL;
     }
 }
