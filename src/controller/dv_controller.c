@@ -282,7 +282,7 @@ int dv_createEntry(dv_app *dv, const char *name)
         // populate block: 0, randomBytes(11), smallEndian(0)
         unsigned char *emptyBlock = malloc(16);
         memset(emptyBlock, 0, 16);
-        randomBytes(emptyBlock + 1, 11);
+        memset(emptyBlock + 1, 0x22, 11);
 
         // increment counter
         unsigned char *ivCopy = malloc(16);
