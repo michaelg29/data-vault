@@ -81,7 +81,7 @@ int dv_createAccount(dv_app *dv, unsigned char *userPwd, int n)
                         10, SHA512_STR, DV_KEYLEN, &kek);
 
         // encrypt key
-        aes_encrypt(dataKey, 16,
+        aes_encrypt(dataKey, DV_KEYLEN,
                     kek, AES_256, AES_CTR,
                     random + dataKeyIV_offset,
                     &encDataKey);
