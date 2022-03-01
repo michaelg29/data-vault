@@ -419,7 +419,6 @@ int dv_createEntryData(dv_app *dv, const char *name, const char *category, const
                 // read and decrypt existing block
                 enc = file_readBlocks(&dataFile, 1);
                 AES_DEC_BLK(dv, enc, ivCopy, &dec);
-                //aes_decrypt_withSchedule(enc, 16, dv->aes_key_schedule, AES_256_NR, AES_CTR, ivCopy, &dec);
 
                 if (DV_DEBUG)
                 {
