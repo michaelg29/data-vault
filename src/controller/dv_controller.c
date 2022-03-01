@@ -539,17 +539,7 @@ int dv_createEntryData(dv_app *dv, const char *name, const char *category, const
         file_close(&dataOut);
         file_close(&dataFile);
 
-        // copy contents to main data file
-        file_open(&dataFile, data_fp, "wb");
-        file_open(&dataOut, data_tmp_fp, "rb");
-
-        char *in = file_read(&dataOut, dataOut.len);
-        file_write(&dataFile, in, dataOut.len);
-
-        file_close(&dataFile);
-        file_close(&dataOut);
-
-        free(in);
+        file_copy(data_fp, data_tmp_fp);
     }
     else
     {

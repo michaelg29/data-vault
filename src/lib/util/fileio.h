@@ -19,6 +19,7 @@ bool file_create(const char *path);
 char *file_readContents(const char *path);
 bool file_writeContents(const char *path, void *buffer, int n);
 bool file_writeContentBlocks(const char *path, void *buffer, int n, int blkSize);
+bool file_copy(const char *dstPath, const char *srcPath);
 
 bool file_open(file_struct *f, const char *path, const char *mode);
 int file_length(file_struct *f);

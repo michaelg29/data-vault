@@ -75,6 +75,26 @@ bool file_writeContentBlocks(const char *path, void *buffer, int n, int blkSize)
     }
 }
 
+bool file_copy(const char *dstPath, const char *srcPath)
+{
+    file_struct dst;
+    file_struct src;
+    bool ret = file_open(&dst, dstPath, "wb") &&
+               file_open(&src, srcPath, "rb");
+
+    if (ret)
+    {
+        char *in = file_read(&src, src.len);
+        file_write(&dst, in, src.len);
+        free(in);
+    }
+
+    file_close(&dst);
+    file_close(&src);
+
+    return ret;
+}
+
 bool file_open(file_struct *f, const char *path, const char *mode)
 {
     f->fp = fopen(path, mode);
