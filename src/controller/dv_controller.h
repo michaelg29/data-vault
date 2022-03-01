@@ -16,5 +16,6 @@ int dv_login(dv_app *dv, unsigned char *userPwd, int n);
 int dv_logout(dv_app *dv);
 
 int dv_createEntry(dv_app *dv, const char *name);
+int dv_createEntryData(dv_app *dv, const char *name, const char *category, const char *data);
 
 #endif // DV_CONTROLLER_H

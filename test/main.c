@@ -24,6 +24,12 @@ int main()
     printf("=====CREATE ENTRY=====\n");
     dv_createEntry(&app, "GitHub");
 
+    printf("=====CREATE DATA1=====\n");
+    dv_createEntryData(&app, "GitHub", "username", "micha");
+
+    printf("=====CREATE DATA2=====\n");
+    dv_createEntryData(&app, "GitHub", "password", "micha");
+
     printf("=====LOGOUT=====\n");
     dv_logout(&app);
 

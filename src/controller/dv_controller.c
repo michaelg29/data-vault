@@ -327,3 +327,236 @@ int dv_createEntry(dv_app *dv, const char *name)
 
     return DV_SUCCESS;
 }
+
+int dv_createEntryData(dv_app *dv, const char *name, const char *category, const char *data)
+{
+    if (!dv->loggedIn)
+    {
+        return DV_LOGGED_OUT;
+    }
+
+    // find entry id
+    unsigned int entryId = (unsigned int)avl_get(dv->nameIdMap, (void *)name);
+    if (!entryId)
+    {
+        // create entry
+        dv_createEntry(dv, name);
+        entryId = dv->maxEntryId;
+    }
+
+    // find the category id
+    unsigned char catId = (unsigned char)(unsigned int)avl_get(dv->catIdMap, (void *)category);
+    if (!catId)
+    {
+        // create category
+        catId = ++dv->maxCatId;
+        char *catCopy = malloc(strlen(category) + 1);
+        memcpy(catCopy, category, strlen(category) + 1);
+        dv->catIdMap = avl_insert(dv->catIdMap, (void *)catCopy, (void *)(unsigned int)catId);
+    }
+
+    // cursor over input
+    int dataCursor = -1;
+    int dataLen = strlen(data) + 1;
+
+    // block cursors
+    unsigned int previousBlock = 1;
+    unsigned int currentBlock = (unsigned int)btree_search(dv->idIdxMap, entryId);
+    unsigned int nextBlock = 1;
+
+    if (DV_DEBUG)
+    {
+        printf("Entry id for %s: %d\n", name, entryId);
+        printf("Category id for %s: %d\n", category, catId);
+        printf("Insert data (%d): %s\n", dataLen, data);
+        printHexString(data, dataLen, "data");
+    }
+
+    // write the data
+    file_struct dataFile;
+    file_struct dataOut;
+    if (file_open(&dataFile, data_fp, "rb") &&
+        file_open(&dataOut, data_tmp_fp, "wb"))
+    {
+        // set up files to be read/written
+        file_setBlockSize(&dataFile, 16);
+        file_setBlockSize(&dataOut, 16);
+        unsigned int noBlocks = dataFile.len >> 4; // len / 16
+
+        // copy first block
+        char *copy = file_readBlocks(&dataFile, 1);
+        file_writeBlocks(&dataOut, copy, 1);
+        free(copy);
+
+        // setup initialization vector
+        unsigned char *ivCopy = malloc(16);
+        memcpy(ivCopy, dv->random + dataIV_offset, 16);
+
+        // iterate through input
+        while (dataCursor < dataLen)
+        {
+            if (DV_DEBUG)
+            {
+                printf("==Block %d\n", currentBlock);
+            }
+
+            // determine increment and skip blocks
+            int increment = currentBlock - previousBlock;
+            if (currentBlock <= noBlocks && increment)
+            {
+                // content to copy (skipped)
+                copy = file_readBlocks(&dataFile, increment);
+                file_writeBlocks(&dataOut, copy, increment);
+                free(copy);
+            }
+            aes_incrementCounter(ivCopy, increment + 1);
+
+            char *enc;
+            unsigned char *dec = NULL;
+            unsigned int startIdx;
+            if (currentBlock < noBlocks)
+            {
+                // read and decrypt existing block
+                enc = file_readBlocks(&dataFile, 1);
+                aes_decrypt_withSchedule(enc, 16, dv->aes_key_schedule, AES_256_NR, AES_CTR, ivCopy, &dec);
+
+                if (DV_DEBUG)
+                {
+                    printHexString(enc, 16, "encBlk");
+                    printHexString(dec, 16, "decBlk");
+                }
+
+                // find continuation block
+                nextBlock = smallEndianValue(dec + 12, 4);
+                if (nextBlock)
+                {
+                    // data ends in another block, cannot write to this one
+
+                    // update counters
+                    previousBlock = currentBlock + 1;
+                    currentBlock = nextBlock;
+
+                    // write unmodified data
+                    file_writeBlocks(&dataOut, enc, 1);
+
+                    if (DV_DEBUG)
+                    {
+                        printf("nonMod\n");
+                    }
+
+                    free(dec);
+                    free(enc);
+
+                    continue;
+                }
+
+                // find first available character
+                int i = 16 - sizeof(unsigned int) - 1;
+                while (i >= 0 && dec[i])
+                {
+                    i--;
+                }
+
+                // start writing after 0
+                startIdx = i + 1;
+
+                // additional data written at end of file
+                nextBlock = noBlocks;
+            }
+            else
+            {
+                // create new block
+                dec = malloc(16);
+                memset(dec, 0x22, 16 - sizeof(unsigned int)); // arbitrary value
+                memset(dec + 12, 0, sizeof(unsigned int));    // continuation block
+
+                // start writing on first byte
+                startIdx = 0;
+
+                // additional data written immediately after
+                nextBlock = currentBlock + 1;
+            }
+
+            bool modified = false;
+            if (dataCursor == -1 && startIdx < 16 - sizeof(unsigned int))
+            {
+                // write category id
+                dec[startIdx] = catId;
+                modified = true;
+
+                // write data after category id
+                startIdx++;
+                dataCursor = 0;
+            }
+
+            if (startIdx < 16 - sizeof(unsigned int))
+            {
+                // write as much data as possible
+                int n = MIN(16 - sizeof(unsigned int) - startIdx,
+                            dataLen - dataCursor);
+                if (n)
+                {
+                    memcpy(dec + startIdx, data + dataCursor, n);
+                    dataCursor += n;
+                    modified = true;
+                }
+            }
+
+            if (dataCursor < dataLen)
+            {
+                // more data to write
+                smallEndianStr(nextBlock, dec + 12, 4);
+                modified = true;
+            }
+
+            // update counters
+            previousBlock = currentBlock + 1;
+            currentBlock = nextBlock;
+
+            if (modified)
+            {
+                free(enc);
+                aes_encrypt_withSchedule(dec, 16,
+                                         dv->aes_key_schedule, AES_256_NR, AES_CTR,
+                                         ivCopy,
+                                         (unsigned char **)&enc);
+                file_writeBlocks(&dataOut, enc, 1);
+
+                if (DV_DEBUG)
+                {
+                    printHexString(dec, 16, "modBlk");
+                    printHexString(enc, 16, "encMod");
+                }
+            }
+
+            free(enc);
+            free(dec);
+        }
+
+        free(ivCopy);
+
+        // close files
+        file_close(&dataOut);
+        file_close(&dataFile);
+
+        // copy contents to main data file
+        file_open(&dataFile, data_fp, "wb");
+        file_open(&dataOut, data_tmp_fp, "rb");
+
+        char *in = file_read(&dataOut, dataOut.len);
+        file_write(&dataFile, in, dataOut.len);
+
+        file_close(&dataFile);
+        file_close(&dataOut);
+
+        free(in);
+    }
+    else
+    {
+        file_close(&dataFile);
+        file_close(&dataOut);
+        return DV_FILE_DNE;
+    }
+
+    return DV_SUCCESS;
+}
