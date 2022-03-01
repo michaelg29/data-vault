@@ -18,4 +18,6 @@ int dv_logout(dv_app *dv);
 int dv_createEntry(dv_app *dv, const char *name);
 int dv_createEntryData(dv_app *dv, const char *name, const char *category, const char *data);
 
+int dv_accessEntryData(dv_app *dv, const char *name, const char *category, char **buffer);
+
 #endif // DV_CONTROLLER_H

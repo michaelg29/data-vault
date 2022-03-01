@@ -548,3 +548,158 @@ int dv_createEntryData(dv_app *dv, const char *name, const char *category, const
 
     return DV_SUCCESS;
 }
+
+int dv_accessEntryData(dv_app *dv, const char *name, const char *category, char **buffer)
+{
+    if (!dv->loggedIn)
+    {
+        return DV_LOGGED_OUT;
+    }
+
+    // find entry id
+    unsigned int entryId = (unsigned int)avl_get(dv->nameIdMap, (void *)name);
+    if (!entryId)
+    {
+        return DV_INVALID_INPUT;
+    }
+
+    unsigned char catId = (unsigned char)(unsigned int)avl_get(dv->catIdMap, (void *)category);
+    if (!catId)
+    {
+        return DV_INVALID_INPUT;
+    }
+
+    if (DV_DEBUG)
+    {
+        printf("Entry id for %s: %d\n", name, entryId);
+        printf("Category id for %s: %d\n", category, catId);
+    }
+
+    strstream ret = strstream_allocDefault();
+    unsigned int previousBlock = 0;
+    unsigned int currentBlock = (unsigned int)btree_search(dv->idIdxMap, entryId);
+    unsigned int nextBlock = 0;
+
+    int retCode = DV_SUCCESS;
+
+    do
+    {
+        file_struct dataFile;
+        if (!file_open(&dataFile, data_fp, "rb"))
+        {
+            retCode = DV_FILE_DNE;
+            break;
+        }
+
+        // set up file
+        file_setBlockSize(&dataFile, 16);
+        unsigned int noBlocks = dataFile.len >> 4; // len / 16
+
+        // skip first block
+        file_advanceCursorBlocks(&dataFile, 1);
+
+        // copy IV
+        unsigned char *ivCopy = malloc(16);
+        memcpy(ivCopy, dv->random + dataIV_offset, 16);
+
+        bool completed = false;
+        bool onTarget = false;
+        bool scanData = false;
+        unsigned int startIdx;
+
+        while (currentBlock < noBlocks)
+        {
+            // skip blocks
+            int increment = currentBlock - previousBlock;
+            file_advanceCursorBlocks(&dataFile, increment - 1);
+            aes_incrementCounter(ivCopy, increment);
+
+            // read block
+            char *enc = file_readBlocks(&dataFile, 1);
+            unsigned char *dec = NULL;
+            AES_DEC_BLK(dv, enc, ivCopy, &dec);
+
+            if (DV_DEBUG)
+            {
+                printf("==Block %d: increment by %d\n", currentBlock, increment);
+                printHexString(enc, 16, "encBlock");
+                printHexString(ivCopy, 16, "ivInc");
+                printHexString(dec, 16, "decBlock");
+            }
+
+            if (onTarget)
+            {
+                // read from beginning of block
+                startIdx = 0;
+            }
+
+            int i = 0;
+            for (; i < 16 - sizeof(unsigned int); i++)
+            {
+                if (!scanData)
+                {
+                    scanData = true;
+
+                    if (dec[i] == catId)
+                    {
+                        // found target
+                        onTarget = true;
+                        startIdx = i + 1;
+                    }
+                }
+
+                if (!dec[i])
+                {
+                    // terminator character
+                    scanData = false;
+
+                    if (onTarget)
+                    {
+                        // finished reading target
+                        completed = true;
+                        break;
+                    }
+                }
+            }
+
+            if (onTarget)
+            {
+                // write characters to the buffer
+                strstream_read(&ret, dec + startIdx, i - startIdx);
+            }
+
+            // read continuation block
+            nextBlock = smallEndianValue(dec + 12, 4);
+
+            free(enc);
+            free(dec);
+
+            if (completed || !nextBlock)
+            {
+                // either completed entry or read all data
+                break;
+            }
+
+            // update counters
+            previousBlock = currentBlock;
+            currentBlock = nextBlock;
+        }
+
+        file_close(&dataFile);
+        free(ivCopy);
+
+        if (!completed)
+        {
+            // data does not exist
+            retCode = DV_INVALID_INPUT;
+            break;
+        }
+
+        // set return value
+        *buffer = malloc(ret.size + 1);
+        memcpy(*buffer, ret.str, ret.size + 1);
+    } while (false);
+
+    strstream_clear(&ret);
+    return retCode;
+}

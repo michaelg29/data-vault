@@ -12,26 +12,46 @@ int main()
     printf("Hello, world!\n");
 
     dv_app app;
+    char *buf;
+    int retCode;
 
     dv_init(&app);
 
+    DV_DEBUG = 0;
     printf("=====CREATE ACCOUNT=====\n");
-    dv_createAccount(&app, "test", 4);
+    retCode = dv_createAccount(&app, "test", 4);
+    printf("return %d\n", retCode);
 
     printf("=====LOGIN=====\n");
-    dv_login(&app, "test", 4);
+    retCode = dv_login(&app, "test", 4);
+    printf("return %d\n", retCode);
 
     printf("=====CREATE ENTRY=====\n");
-    dv_createEntry(&app, "GitHub");
+    retCode = dv_createEntry(&app, "GitHub");
+    printf("return %d\n", retCode);
 
     printf("=====CREATE DATA1=====\n");
-    dv_createEntryData(&app, "GitHub", "username", "micha");
+    retCode = dv_createEntryData(&app, "GitHub", "username", "micha");
+    printf("return %d\n", retCode);
 
     printf("=====CREATE DATA2=====\n");
-    dv_createEntryData(&app, "GitHub", "password", "micha");
+    retCode = dv_createEntryData(&app, "GitHub", "password", "micha2");
+    printf("return %d\n", retCode);
+
+    printf("=====ACCESS DATA1=====\n");
+    retCode = dv_accessEntryData(&app, "GitHub", "user", &buf);
+    printf("return %d\n", retCode);
+    if (!retCode)
+        printf("%s\n", buf);
+
+    printf("=====ACCESS DATA2=====\n");
+    retCode = dv_accessEntryData(&app, "GitHub", "password", &buf);
+    printf("return %d\n", retCode);
+    if (!retCode)
+        printf("%s\n", buf);
 
     printf("=====LOGOUT=====\n");
-    dv_logout(&app);
+    retCode = dv_logout(&app);
 
     dv_kill(&app);
 
