@@ -25,6 +25,10 @@ const unsigned int nameIdIV_offset = 0x40;
 const unsigned int idIdxIV_offset = 0x50;
 const unsigned int catIdIV_offset = 0x60;
 
+// shortcut for encryption/decryption calls
+#define AES_ENC_BLK(dv, in, iv, out) aes_encrypt_withSchedule(in, 16, dv->aes_key_schedule, AES_256_NR, AES_CTR, iv, out)
+#define AES_DEC_BLK(dv, in, iv, out) aes_decrypt_withSchedule(in, 16, dv->aes_key_schedule, AES_256_NR, AES_CTR, iv, out)
+
 int dv_createAccount(dv_app *dv, unsigned char *userPwd, int n)
 {
     // input validation
@@ -291,11 +295,7 @@ int dv_createEntry(dv_app *dv, const char *name)
 
         // encrypt
         unsigned char *enc;
-        aes_encrypt_withSchedule(emptyBlock, 16,
-                                 dv->aes_key_schedule, AES_256_NR,
-                                 AES_CTR,
-                                 ivCopy,
-                                 &enc);
+        AES_ENC_BLK(dv, emptyBlock, ivCopy, &enc);
 
         // append to file
         file_writeBlocks(&dataFile, enc, 1);
@@ -418,7 +418,8 @@ int dv_createEntryData(dv_app *dv, const char *name, const char *category, const
             {
                 // read and decrypt existing block
                 enc = file_readBlocks(&dataFile, 1);
-                aes_decrypt_withSchedule(enc, 16, dv->aes_key_schedule, AES_256_NR, AES_CTR, ivCopy, &dec);
+                AES_DEC_BLK(dv, enc, ivCopy, &dec);
+                //aes_decrypt_withSchedule(enc, 16, dv->aes_key_schedule, AES_256_NR, AES_CTR, ivCopy, &dec);
 
                 if (DV_DEBUG)
                 {
@@ -516,10 +517,8 @@ int dv_createEntryData(dv_app *dv, const char *name, const char *category, const
             if (modified)
             {
                 free(enc);
-                aes_encrypt_withSchedule(dec, 16,
-                                         dv->aes_key_schedule, AES_256_NR, AES_CTR,
-                                         ivCopy,
-                                         (unsigned char **)&enc);
+                printHexString(ivCopy, 16, "iv");
+                AES_ENC_BLK(dv, dec, ivCopy, (unsigned char **)&enc);
                 file_writeBlocks(&dataOut, enc, 1);
 
                 if (DV_DEBUG)
