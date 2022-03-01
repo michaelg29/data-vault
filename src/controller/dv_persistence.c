@@ -212,7 +212,7 @@ void writeStrId(strstream *out, avl *root, int idSize)
         // visit root
         unsigned char *name = root->key;
         unsigned int id = (unsigned int)root->val;
-        unsigned char *idStr = smallEndianStr(id);
+        unsigned char *idStr = newSmallEndianStr(id);
 
         // format: entry.name, \0, str(entry.id)
         strstream_read(out, name, strlen(name) + 1);
@@ -249,9 +249,9 @@ void writeIdIdx(strstream *out, btree_node *root)
 
             // write current key-value pair
             unsigned char *numStr = NULL;
-            numStr = smallEndianStr(root->keys[i]);
+            numStr = newSmallEndianStr(root->keys[i]);
             strstream_read(out, numStr, 4);
-            numStr = smallEndianStr((unsigned int)root->vals[i]);
+            numStr = newSmallEndianStr((unsigned int)root->vals[i]);
             strstream_read(out, numStr, 4);
 
             free(numStr);
