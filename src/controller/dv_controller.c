@@ -285,8 +285,8 @@ int dv_createEntry(dv_app *dv, const char *name)
 
         // populate block: 0x22 * 12, smallEndian(0)
         unsigned char *emptyBlock = malloc(16);
-        memset(emptyBlock, 0x22, 12);
-        memset(emptyBlock + 12, 0, 4);
+        memset(emptyBlock, 0x22, 14);
+        memset(emptyBlock + 14, 0, 2);
 
         // increment counter
         unsigned char *ivCopy = malloc(16);
@@ -427,7 +427,7 @@ int dv_createEntryData(dv_app *dv, const char *name, const char *category, const
                 }
 
                 // find continuation block
-                nextBlock = smallEndianValue(dec + 12, 4);
+                nextBlock = smallEndianValue(dec + 14, 2);
                 if (nextBlock)
                 {
                     // data ends in another block, cannot write to this one
@@ -451,7 +451,7 @@ int dv_createEntryData(dv_app *dv, const char *name, const char *category, const
                 }
 
                 // find first available character
-                int i = 16 - sizeof(unsigned int) - 1;
+                int i = 16 - sizeof(unsigned short) - 1;
                 while (i >= 0 && dec[i])
                 {
                     i--;
@@ -467,8 +467,8 @@ int dv_createEntryData(dv_app *dv, const char *name, const char *category, const
             {
                 // create new block
                 dec = malloc(16);
-                memset(dec, 0x22, 16 - sizeof(unsigned int)); // arbitrary value
-                memset(dec + 12, 0, sizeof(unsigned int));    // continuation block
+                memset(dec, 0x22, 16 - sizeof(unsigned short)); // arbitrary value
+                memset(dec + 14, 0, sizeof(unsigned short));    // continuation block
 
                 // start writing on first byte
                 startIdx = 0;
@@ -478,7 +478,7 @@ int dv_createEntryData(dv_app *dv, const char *name, const char *category, const
             }
 
             bool modified = false;
-            if (dataCursor == -1 && startIdx < 16 - sizeof(unsigned int))
+            if (dataCursor == -1 && startIdx < 16 - sizeof(unsigned short))
             {
                 // write category id
                 dec[startIdx] = catId;
@@ -489,10 +489,10 @@ int dv_createEntryData(dv_app *dv, const char *name, const char *category, const
                 dataCursor = 0;
             }
 
-            if (startIdx < 16 - sizeof(unsigned int))
+            if (startIdx < 16 - sizeof(unsigned short))
             {
                 // write as much data as possible
-                int n = MIN(16 - sizeof(unsigned int) - startIdx,
+                int n = MIN(16 - sizeof(unsigned short) - startIdx,
                             dataLen - dataCursor);
                 if (n)
                 {
@@ -505,7 +505,7 @@ int dv_createEntryData(dv_app *dv, const char *name, const char *category, const
             if (dataCursor < dataLen)
             {
                 // more data to write
-                smallEndianStr(nextBlock, dec + 12, 4);
+                smallEndianStr(nextBlock, dec + 14, 2);
                 modified = true;
             }
 
@@ -634,7 +634,7 @@ int dv_accessEntryData(dv_app *dv, const char *name, const char *category, char 
             }
 
             int i = 0;
-            for (; i < 16 - sizeof(unsigned int); i++)
+            for (; i < 16 - sizeof(unsigned short); i++)
             {
                 if (!scanData)
                 {
@@ -669,7 +669,7 @@ int dv_accessEntryData(dv_app *dv, const char *name, const char *category, char 
             }
 
             // read continuation block
-            nextBlock = smallEndianValue(dec + 12, 4);
+            nextBlock = smallEndianValue(dec + 14, 2);
 
             free(enc);
             free(dec);

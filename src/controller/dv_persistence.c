@@ -79,8 +79,8 @@ void readIdIdxMap(dv_app *dv, strstream stream)
         free(numStr);
 
         // read and parse idx
-        numStr = strstream_substrLength(&stream, i, 4);
-        idx = smallEndianValue(numStr, 4);
+        numStr = strstream_substrLength(&stream, i, 2);
+        idx = smallEndianValue(numStr, 2);
         free(numStr);
 
         // insert into btree
@@ -251,8 +251,8 @@ void writeIdIdx(strstream *out, btree_node *root)
             unsigned char *numStr = NULL;
             numStr = newSmallEndianStr(root->keys[i]);
             strstream_read(out, numStr, 4);
-            numStr = newSmallEndianStr((unsigned int)root->vals[i]);
-            strstream_read(out, numStr, 4);
+            numStr = newSmallEndianStr((unsigned short)(unsigned int)root->vals[i]);
+            strstream_read(out, numStr, 2);
 
             free(numStr);
         }
