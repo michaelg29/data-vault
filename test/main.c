@@ -37,7 +37,6 @@ int main()
     retCode = dv_createEntryData(&app, "GitHub", "password", "micha2");
     printf("return %d\n", retCode);
 
-    DV_DEBUG = 1;
     printf("=====ACCESS DATA1=====\n");
     retCode = dv_accessEntryData(&app, "GitHub", "username", &buf);
     printf("return %d\n", retCode);
