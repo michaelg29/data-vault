@@ -369,7 +369,7 @@ int dv_createEntryData(dv_app *dv, const char *name, const char *category, const
         printf("Entry id for %s: %d\n", name, entryId);
         printf("Category id for %s: %d\n", category, catId);
         printf("Insert data (%d): %s\n", dataLen, data);
-        printHexString(data, dataLen, "data");
+        printHexString((char*)data, dataLen, "data");
     }
 
     // write the data
