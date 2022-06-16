@@ -22,6 +22,7 @@ bool file_writeContentBlocks(const char *path, void *buffer, int n, int blkSize)
 bool file_copy(const char *dstPath, const char *srcPath);
 
 bool file_open(file_struct *f, const char *path, const char *mode);
+bool file_openBlocks(file_struct *f, const char *path, const char *mode, unsigned int blockSize);
 int file_length(file_struct *f);
 void file_setBlockSize(file_struct *f, int size);
 

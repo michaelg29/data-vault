@@ -276,10 +276,8 @@ int dv_createEntry(dv_app *dv, const char *name)
 
     // create block
     file_struct dataFile;
-    if (file_open(&dataFile, data_fp, "ab"))
+    if (file_openBlocks(&dataFile, data_fp, "ab", 16))
     {
-        // setup file
-        file_setBlockSize(&dataFile, 16);
         // find end of file
         int initBlock = dataFile.len >> 4; // len / 16
 
@@ -375,12 +373,9 @@ int dv_createEntryData(dv_app *dv, const char *name, const char *category, const
     // write the data
     file_struct dataFile;
     file_struct dataOut;
-    if (file_open(&dataFile, data_fp, "rb") &&
-        file_open(&dataOut, data_tmp_fp, "wb"))
+    if (file_openBlocks(&dataFile, data_fp, "rb", 16) &&
+        file_openBlocks(&dataOut, data_tmp_fp, "wb", 16))
     {
-        // set up files to be read/written
-        file_setBlockSize(&dataFile, 16);
-        file_setBlockSize(&dataOut, 16);
         unsigned int noBlocks = dataFile.len >> 4; // len / 16
 
         // copy first block
@@ -585,14 +580,11 @@ int dv_accessEntryData(dv_app *dv, const char *name, const char *category, char 
     do
     {
         file_struct dataFile;
-        if (!file_open(&dataFile, data_fp, "rb"))
+        if (!file_openBlocks(&dataFile, data_fp, "rb", 16))
         {
             retCode = DV_FILE_DNE;
             break;
         }
-
-        // set up file
-        file_setBlockSize(&dataFile, 16);
         unsigned int noBlocks = dataFile.len >> 4; // len / 16
 
         // skip first block

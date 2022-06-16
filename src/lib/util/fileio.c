@@ -97,6 +97,11 @@ bool file_copy(const char *dstPath, const char *srcPath)
 
 bool file_open(file_struct *f, const char *path, const char *mode)
 {
+    return file_openBlocks(f, path, mode, 1);
+}
+
+bool file_openBlocks(file_struct *f, const char *path, const char *mode, unsigned int blockSize)
+{
     f->fp = fopen(path, mode);
     if (!f->fp)
     {
@@ -105,7 +110,7 @@ bool file_open(file_struct *f, const char *path, const char *mode)
 
     f->cursor = 0;
     f->len = file_length(f);
-    f->blockSize = 0;
+    f->blockSize = blockSize;
 
     return true;
 }
