@@ -49,6 +49,23 @@ int main()
     if (!retCode)
         printf("%s\n", buf);
 
+    DV_DEBUG = 1;
+    printf("=====DELETE DATA2=====\n");
+    retCode = dv_deleteEntryData(&app, "GitHub", "password");
+    printf("return %d\n", retCode);
+
+    printf("=====ACCESS DATA1=====\n");
+    retCode = dv_accessEntryData(&app, "GitHub", "username", &buf);
+    printf("return %d\n", retCode);
+    if (!retCode)
+        printf("%s\n", buf);
+
+    printf("=====ACCESS DATA2=====\n");
+    retCode = dv_accessEntryData(&app, "GitHub", "password", &buf);
+    printf("return %d\n", retCode);
+    if (!retCode)
+        printf("%s\n", buf);
+
     printf("=====LOGOUT=====\n");
     retCode = dv_logout(&app);
 
