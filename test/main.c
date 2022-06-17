@@ -20,7 +20,7 @@ bool createAccount(const char *pwd)
     noTests++;
     bool ret = retCode == DV_SUCCESS;
     noSuccesses += ret;
-    return retCode;
+    return ret;
 }
 
 bool login(const char *pwd)
@@ -30,7 +30,7 @@ bool login(const char *pwd)
     noTests++;
     bool ret = retCode == DV_SUCCESS;
     noSuccesses += ret;
-    return retCode;
+    return ret;
 }
 
 bool loginFail(const char *pwd)
@@ -40,7 +40,7 @@ bool loginFail(const char *pwd)
     noTests++;
     bool ret = retCode == DV_INVALID_INPUT;
     noSuccesses += ret;
-    return retCode;
+    return ret;
 }
 
 bool logout()
@@ -50,7 +50,7 @@ bool logout()
     noTests++;
     bool ret = retCode == DV_SUCCESS;
     noSuccesses += ret;
-    return retCode;
+    return ret;
 }
 
 bool createEntry(const char *entryName)
@@ -60,7 +60,7 @@ bool createEntry(const char *entryName)
     noTests++;
     bool ret = retCode == DV_SUCCESS;
     noSuccesses += ret;
-    return retCode;
+    return ret;
 }
 
 bool createData(const char *entryName, const char *categoryName, const char *data)
@@ -70,7 +70,7 @@ bool createData(const char *entryName, const char *categoryName, const char *dat
     noTests++;
     bool ret = retCode == DV_SUCCESS;
     noSuccesses += ret;
-    return retCode;
+    return ret;
 }
 
 bool accessData(const char *entryName, const char *categoryName, const char *expected)
@@ -82,7 +82,7 @@ bool accessData(const char *entryName, const char *categoryName, const char *exp
     noTests++;
     bool ret = retCode == DV_SUCCESS && matches;
     noSuccesses += ret;
-    return retCode;
+    return ret;
 }
 
 bool accessDataFailure(const char *entryName, const char *categoryName)
@@ -93,7 +93,7 @@ bool accessDataFailure(const char *entryName, const char *categoryName)
     noTests++;
     bool ret = retCode == DV_SUCCESS;
     noSuccesses += ret;
-    return retCode;
+    return ret;
 }
 
 bool deleteData(const char *entryName, const char *categoryName)
@@ -103,7 +103,7 @@ bool deleteData(const char *entryName, const char *categoryName)
     noTests++;
     bool ret = retCode == DV_SUCCESS;
     noSuccesses += ret;
-    return retCode;
+    return ret;
 }
 
 bool modifyData(const char *entryName, const char *categoryName, const char *newData)
@@ -113,7 +113,7 @@ bool modifyData(const char *entryName, const char *categoryName, const char *new
     noTests++;
     bool ret = retCode == DV_SUCCESS;
     noSuccesses += ret;
-    return retCode;
+    return ret;
 }
 
 bool deleteDataFailure(const char *entryName, const char *categoryName)
@@ -123,7 +123,7 @@ bool deleteDataFailure(const char *entryName, const char *categoryName)
     noTests++;
     bool ret = retCode == DV_SUCCESS;
     noSuccesses += ret;
-    return retCode;
+    return ret;
 }
 
 int main()
@@ -134,8 +134,16 @@ int main()
 
     createAccount("testPwd");
     loginFail("test");
-    login("testPwd");
-    logout();
+
+    if (login("testPwd"))
+    {
+        createEntry("GitHub");
+        accessDataFailure("GitHub", "password");
+        createData("GitHub", "password", "pwd123");
+        accessData("GitHub", "password", "pwd123");
+
+        logout();
+    }
 
     dv_kill(&app);
 
