@@ -617,7 +617,7 @@ int dv_deleteEntryData(dv_app *dv, const char *name, const char *category)
 
             // skip blocks
             int increment = currentBlock - previousBlock;
-            file_advanceCursorBlocks(&dataFile, increment - 1);
+            file_advanceCursorBlocks(&dataFile, increment);
             aes_incrementCounter(ivCopy, increment + 1);
 
             // read block
