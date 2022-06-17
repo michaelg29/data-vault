@@ -22,4 +22,6 @@ int dv_setEntryData(dv_app *dv, const char *name, const char *category, const ch
 
 int dv_accessEntryData(dv_app *dv, const char *name, const char *category, char **buffer);
 
+void dv_advanceStartIdx(btree_node *root, unsigned int skipBlock);
+
 #endif // DV_CONTROLLER_H

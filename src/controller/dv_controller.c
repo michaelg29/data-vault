@@ -512,12 +512,12 @@ int dv_createEntryData(dv_app *dv, const char *name, const char *category, const
             if (modified)
             {
                 free(enc);
-                printHexString(ivCopy, 16, "iv");
                 AES_ENC_BLK(dv, dec, ivCopy, (unsigned char **)&enc);
                 file_writeBlocks(&dataOut, enc, 1);
 
                 if (DV_DEBUG)
                 {
+                    printHexString(ivCopy, 16, "iv");
                     printHexString(dec, 16, "modBlk");
                     printHexString(enc, 16, "encMod");
                 }
@@ -579,6 +579,13 @@ int dv_deleteEntryData(dv_app *dv, const char *name, const char *category)
 
     strstream entryData = strstream_allocDefault();
     dynamicarray occupiedBlocks = dynarr_defaultAllocate();
+
+    unsigned char *ivCopy = NULL;
+    unsigned char *ivCopyIn = NULL;
+    unsigned char *ivCopyOut = NULL;
+
+    char *enc = NULL;
+    unsigned char *dec = NULL;
     
     int retCode = DV_SUCCESS;
 
@@ -596,15 +603,13 @@ int dv_deleteEntryData(dv_app *dv, const char *name, const char *category)
         file_advanceCursorBlocks(&dataFile, 1);
 
         // copy IV
-        unsigned char *ivCopy = malloc(16);
+        ivCopy = malloc(16);
         memcpy(ivCopy, dv->random + dataIV_offset, 16);
 
         bool onTarget = false;
         bool scanData = false;
+        bool complete = false;
         unsigned int startIdx;
-
-        char *enc = NULL;
-        unsigned char *dec = NULL;
 
         while (currentBlock < noBlocks)
         {
@@ -618,6 +623,8 @@ int dv_deleteEntryData(dv_app *dv, const char *name, const char *category)
             // read block
             enc = file_readBlocks(&dataFile, 1);
             AES_DEC_BLK(dv, enc, ivCopy, &dec);
+            // read continuation block
+            nextBlock = smallEndianValue(dec + 14, 2);
 
             if (DV_DEBUG)
             {
@@ -627,50 +634,59 @@ int dv_deleteEntryData(dv_app *dv, const char *name, const char *category)
                 printHexString(dec, 16, "decBlock");
             }
 
-            for (int i = 0; i < 14; i++)
+            if (complete)
             {
-                if (!scanData)
+                int endIdx = 16 - sizeof(short);
+                while (!nextBlock && dec[endIdx - 1]) endIdx--;
+                strstream_read(&entryData, dec, endIdx - startIdx);
+            }
+            else
+            {
+                for (int i = 0; i < 14; i++)
                 {
-                    scanData = true;
-
-                    if (dec[i] == catId)
+                    if (!scanData)
                     {
-                        // found target
-                        onTarget = true;
-                        startIdx = 16;
+                        scanData = true;
 
-                        // read into data stream until entry
-                        if (i)
+                        if (dec[i] == catId)
                         {
-                            strstream_read(&entryData, dec, i);
+                            // found target
+                            onTarget = true;
+                            startIdx = 16;
+
+                            // read into data stream until entry
+                            if (i)
+                            {
+                                strstream_read(&entryData, dec, i);
+                            }
+                        }
+                    }
+
+                    if (!dec[i])
+                    {
+                        // terminator character
+                        scanData = false;
+
+                        if (onTarget)
+                        {
+                            // finished reading target
+                            startIdx = i + 1;
+                            complete = true;
+                            break;
                         }
                     }
                 }
 
-                if (!dec[i])
+                // read after block
+                if (!complete && startIdx >= 0 && startIdx < 16 - sizeof(short))
                 {
-                    // terminator character
-                    scanData = false;
-
-                    if (onTarget)
-                    {
-                        // finished reading target
-                        startIdx = i + 1;
-                        break;
-                    }
+                    int endIdx = 16 - sizeof(short);
+                    while (!nextBlock && dec[endIdx - 1]) endIdx--;
+                    strstream_read(&entryData, dec + startIdx, endIdx - startIdx);
                 }
             }
 
-            // read continuation block
-            nextBlock = smallEndianValue(dec + 14, 2);
-
-            // read after block
-            if (startIdx >= 0 && startIdx < 16 - sizeof(short))
-            {
-                int endIdx = 16 - sizeof(short);
-                while (!nextBlock && dec[endIdx - 1]) endIdx--;
-                strstream_read(&entryData, dec + startIdx, endIdx - startIdx);
-            }
+            
 
             free(enc);
             free(dec);
@@ -693,8 +709,16 @@ int dv_deleteEntryData(dv_app *dv, const char *name, const char *category)
         file_close(&dataFile);
         free(ivCopy);
 
+        if (!(complete && onTarget))
+        {
+            // not found
+            retCode = DV_INVALID_INPUT;
+            break;
+        }
+
         // write to file
-        if (!file_openBlocks(&dataFile, data_fp, "rb", 16))
+        file_struct dataIn;
+        if (!file_openBlocks(&dataIn, data_fp, "rb", 16))
         {
             retCode = DV_FILE_DNE;
             break;
@@ -707,16 +731,15 @@ int dv_deleteEntryData(dv_app *dv, const char *name, const char *category)
             break;
         }
 
-        ivCopy = malloc(16);
-        memcpy(ivCopy, dv->random + dataIV_offset, 16);
-        unsigned char *ivCopyOut = malloc(16);
+        ivCopyIn = malloc(16);
+        memcpy(ivCopyIn, dv->random + dataIV_offset, 16);
+        ivCopyOut = malloc(16);
         memcpy(ivCopyOut, dv->random + dataIV_offset, 16);
 
         // write all blocks in order
         previousBlock = 0;
         int listIdx = 0;
         int dataCursor = 0;
-        dec = malloc(16);
         for (; listIdx < occupiedBlocks.size; listIdx++)
         {
             currentBlock = (unsigned int)occupiedBlocks.list[listIdx];
@@ -728,15 +751,16 @@ int dv_deleteEntryData(dv_app *dv, const char *name, const char *category)
                 if (currentBlock <= noBlocks && increment) // & dataCursor < entryData.size
                 {
                     // content to copy (skipped)
-                    char *copy = file_readBlocks(&dataFile, increment);
-                    printHexString(copy, 16, "copyBlock");
+                    char *copy = file_readBlocks(&dataIn, increment);
                     file_writeBlocks(&dataOut, copy, increment);
                     free(copy);
                 }
-                aes_incrementCounter(ivCopy, increment);
+                aes_incrementCounter(ivCopyIn, increment);
+                aes_incrementCounter(ivCopyOut, increment);
 
                 // write entry data
                 int n = MIN(14, entryData.size - dataCursor);
+                dec = malloc(16);
                 memcpy(dec, entryData.str + dataCursor, n); // copy data
                 memset(dec + n, 0x22, 14 - n); // default value
                 dataCursor += n;
@@ -747,10 +771,11 @@ int dv_deleteEntryData(dv_app *dv, const char *name, const char *category)
                 }
                 else
                 {
+                    // no continuation block
                     memset(dec + 14, 0, 2);
                 }
 
-                AES_ENC_BLK(dv, dec, ivCopy, (unsigned char **)&enc);
+                AES_ENC_BLK(dv, dec, ivCopyOut, (unsigned char **)&enc);
                 file_writeBlocks(&dataOut, enc, 1);
                 
                 if (DV_DEBUG)
@@ -764,8 +789,26 @@ int dv_deleteEntryData(dv_app *dv, const char *name, const char *category)
             }
             else
             {
-                // move up blocks
-                break;
+                // skip input block
+                file_advanceCursorBlocks(&dataIn, 1);
+                aes_incrementCounter(ivCopyIn, 1);
+                for (int i = 1; i < increment; i++)
+                {
+                    aes_incrementCounter(ivCopyIn, 1);
+                    aes_incrementCounter(ivCopyOut, 1);
+
+                    // decrypt and re-encrypt with new IV
+                    enc = file_readBlocks(&dataIn, 1);
+                    AES_DEC_BLK(dv, enc, ivCopyIn, &dec);
+                    AES_ENC_BLK(dv, dec, ivCopyOut, (unsigned char **)&enc);
+                    file_writeBlocks(&dataOut, enc, 1);
+
+                    free(enc);
+                    free(dec);
+
+                    // decrease startIdxs on subsequent entries
+                    dv_advanceStartIdx(dv->idIdxMap.root, currentBlock);
+                }
             }
 
             previousBlock = currentBlock;
@@ -776,6 +819,14 @@ int dv_deleteEntryData(dv_app *dv, const char *name, const char *category)
 
         file_copy(data_fp, data_tmp_fp);
     } while (false);
+
+    conditionalFree(ivCopy, free);
+    conditionalFree(ivCopyIn, free);
+    conditionalFree(ivCopyOut, free);
+    conditionalFree(dec, free);
+    conditionalFree(enc, free);
+    strstream_clear(&entryData);
+    dynarr_free(&occupiedBlocks);
 
     return retCode;
 }
@@ -936,4 +987,32 @@ int dv_accessEntryData(dv_app *dv, const char *name, const char *category, char 
 
     strstream_clear(&ret);
     return retCode;
+}
+
+void dv_advanceStartIdx(btree_node *root, unsigned int skipBlock)
+{
+    // do an inorder traversal
+    if (root)
+    {
+        int i = 0;
+        for (; i < root->n; i++)
+        {
+            // traverse to children
+            if (root->noChildren)
+            {
+                dv_advanceStartIdx(root->children[i], skipBlock);
+            }
+
+            unsigned int idx = (unsigned int)root->vals[i];
+            if (idx > skipBlock)
+            {
+                root->vals[i] = (void*)(idx - 1);
+            }
+        }
+        // traverse to last child
+        if (root->noChildren)
+        {
+             dv_advanceStartIdx(root->children[i], skipBlock);
+        }
+    }
 }
