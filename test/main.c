@@ -91,7 +91,7 @@ bool accessDataFailure(const char *entryName, const char *categoryName)
     printf("Access non-existent %s for entry %s: %d\n", categoryName, entryName, retCode);
     free(buf);
     noTests++;
-    bool ret = retCode == DV_SUCCESS;
+    bool ret = retCode == DV_INVALID_INPUT;
     noSuccesses += ret;
     return ret;
 }
