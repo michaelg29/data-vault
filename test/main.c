@@ -106,6 +106,16 @@ bool deleteData(const char *entryName, const char *categoryName)
     return retCode;
 }
 
+bool modifyData(const char *entryName, const char *categoryName, const char *newData)
+{
+    retCode = dv_setEntryData(&app, entryName, categoryName, newData);
+    printf("Set (%s) for entry %s under category %s: %d\n", newData, entryName, categoryName, retCode);
+    noTests++;
+    bool ret = retCode == DV_SUCCESS;
+    noSuccesses += ret;
+    return retCode;
+}
+
 bool deleteDataFailure(const char *entryName, const char *categoryName)
 {
     retCode = dv_deleteEntryData(&app, entryName, categoryName);
