@@ -814,7 +814,7 @@ int dv_deleteEntryData(dv_app *dv, const char *name, const char *category)
             previousBlock = currentBlock;
         }
 
-        file_close(&dataFile);
+        file_close(&dataIn);
         file_close(&dataOut);
 
         file_copy(data_fp, data_tmp_fp);
