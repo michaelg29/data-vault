@@ -33,6 +33,7 @@ const char *CMD_CREATE_ENTRY = "create";
 const char *CMD_SET = "set";
 const char *CMD_GET = "get";
 const char *CMD_DELETE = "del";
+const char *CMD_CLS = "cls";
 
 int processCommand(strstream *cmd)
 {
@@ -70,6 +71,11 @@ int processCommand(strstream *cmd)
         else if (!strcmp(tokens[0], CMD_LOG))
         {
             dv_log(&app);
+            retCode = DV_SUCCESS;
+        }
+        else if (!strcmp(tokens[0], CMD_CLS))
+        {
+            system("cls");
             retCode = DV_SUCCESS;
         }
         else if (!strcmp(tokens[0], CMD_CREATE_ACCOUNT))
