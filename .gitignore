@@ -1,3 +1,4 @@
-
 *.exe
 *.dv
+*.bat
+test\directorymanifest.json
