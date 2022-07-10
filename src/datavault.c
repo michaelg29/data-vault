@@ -76,16 +76,21 @@ avl *nameIdMap;
     btree idIdxMap;
     avl *catIdMap;
         */
-       logDv = dv;
+        logDv = dv;
 
-       printf("Entries==============\n");
-       printf("Name --> id --> startIdx\n");
-       avl_inorderTraverse(dv->nameIdMap, printEntryId);
+        printf("Entries==============\n");
+        printf("Name --> id --> startIdx\n");
+        if (dv->nameIdMap && dv->nameIdMap->key) {
+            avl_inorderTraverse(dv->nameIdMap, printEntryId);
+        }
+       
 
-       printf("Categories===========\n");
-       printf("Name --> id\n");
-       avl_inorderTraverse(dv->catIdMap, printCategoryId);
+        printf("Categories===========\n");
+        printf("Name --> id\n");
+        if (dv->catIdMap && dv->catIdMap->key) {
+            avl_inorderTraverse(dv->catIdMap, printCategoryId);
+        }
 
-       logDv = NULL;
+        logDv = NULL;
     }
 }
