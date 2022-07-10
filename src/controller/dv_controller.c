@@ -127,9 +127,9 @@ int dv_login(dv_app *dv, unsigned char *userPwd, int n)
     sha3_context hashCtx;
     unsigned char *hash = NULL;
     char *expected = NULL;
-    unsigned char *kek;
+    unsigned char *kek = NULL;
     char *encDataKey = NULL;
-    unsigned char *tmp;
+    unsigned char *tmp = NULL;
 
     do
     {
@@ -407,7 +407,7 @@ int dv_createEntryData(dv_app *dv, const char *name, const char *category, const
             }
             aes_incrementCounter(ivCopy, increment + 1);
 
-            char *enc;
+            char *enc = NULL;
             unsigned char *dec = NULL;
             unsigned int startIdx;
             if (currentBlock < noBlocks)
@@ -511,7 +511,7 @@ int dv_createEntryData(dv_app *dv, const char *name, const char *category, const
 
             if (modified)
             {
-                free(enc);
+                conditionalFree(enc, free);
                 AES_ENC_BLK(dv, dec, ivCopy, (unsigned char **)&enc);
                 file_writeBlocks(&dataOut, enc, 1);
 
@@ -523,8 +523,8 @@ int dv_createEntryData(dv_app *dv, const char *name, const char *category, const
                 }
             }
 
-            free(enc);
-            free(dec);
+            conditionalFree(enc, free);
+            conditionalFree(dec, free);
         }
 
         free(ivCopy);

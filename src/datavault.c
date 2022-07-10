@@ -53,3 +53,39 @@ void dv_kill(dv_app *dv)
     dv->maxEntryId = 0;
     dv->maxCatId = 0;
 }
+
+dv_app *logDv = NULL;
+void printEntryId(avl *node)
+{
+    unsigned int idx = (unsigned int)btree_search(logDv->idIdxMap, (unsigned int)node->val);
+    printf("%s --> %d --> %d\n", (const char *)node->key, (unsigned int)node->val, idx);
+}
+
+void printCategoryId(avl *node)
+{
+    printf("%s --> %d\n", (const char *)node->key, (unsigned int)node->val);
+}
+
+void dv_log(dv_app *dv)
+{
+    printf("Logged in: %s\n", dv->loggedIn ? "true" : "false");
+    if (dv->loggedIn)
+    {
+        /*
+avl *nameIdMap;
+    btree idIdxMap;
+    avl *catIdMap;
+        */
+       logDv = dv;
+
+       printf("Entries==============\n");
+       printf("Name --> id --> startIdx\n");
+       avl_inorderTraverse(dv->nameIdMap, printEntryId);
+
+       printf("Categories===========\n");
+       printf("Name --> id\n");
+       avl_inorderTraverse(dv->catIdMap, printCategoryId);
+
+       logDv = NULL;
+    }
+}

@@ -71,7 +71,7 @@ void readIdIdxMap(dv_app *dv, strstream stream)
     int id;
     int idx;
 
-    for (int i = 0; i < stream.size; i += 2 * sizeof(int))
+    for (int i = 0; i < stream.size; i += 6)
     {
         // read and parse id
         numStr = strstream_substrLength(&stream, i, 4);
@@ -144,6 +144,11 @@ int dv_parse(dv_app *dv, const char *path, unsigned int offset,
             // pass to string stream
             stream = strstream_alloc(file.len);
             strstream_read(&stream, dec, file.len);
+
+            if (DV_DEBUG)
+            {
+                printHexString(stream.str, stream.size, path);
+            }
 
             // free variables
             free(enc);

@@ -140,6 +140,10 @@ int main()
         accessData(GOOGLE, USERNAME, GG_USER);
         deleteData(GOOGLE, USERNAME);
         accessDataFailure(GOOGLE, USERNAME);
+        modifyData(GOOGLE, PASSWORD, GG_PWD2);
+        accessData(GOOGLE, PASSWORD, GG_PWD2);
+        modifyData(GOOGLE, USERNAME, GG_USER);
+        accessData(GOOGLE, USERNAME, GG_USER);
 
         logout();
     }

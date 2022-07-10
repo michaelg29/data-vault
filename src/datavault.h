@@ -36,5 +36,6 @@ typedef struct
 
 void dv_init(dv_app *dv);
 void dv_kill(dv_app *dv);
+void dv_log(dv_app *dv);
 
 #endif // DATAVAULT_H
