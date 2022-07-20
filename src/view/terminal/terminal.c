@@ -10,6 +10,7 @@
 #include <string.h>
 
 dv_app app;
+int DV_DEBUG = 0;
 
 bool getConfirmation(const char *msg)
 {
@@ -25,6 +26,7 @@ bool getConfirmation(const char *msg)
 }
 
 const char *CMD_LOG = "log";
+const char *CMD_PRINT = "print";
 const char *CMD_QUIT = "quit";
 const char *CMD_CREATE_ACCOUNT = "createAccount";
 const char *CMD_LOGIN = "login";
@@ -34,6 +36,7 @@ const char *CMD_SET = "set";
 const char *CMD_GET = "get";
 const char *CMD_DELETE = "del";
 const char *CMD_CLS = "cls";
+const char *CMD_DEBUG = "debug";
 
 int processCommand(strstream *cmd)
 {
@@ -73,9 +76,27 @@ int processCommand(strstream *cmd)
             dv_log(&app);
             retCode = DV_SUCCESS;
         }
+        else if (!strcmp(tokens[0], CMD_PRINT))
+        {
+            dv_printDataFile(&app);
+            retCode = DV_SUCCESS;
+        }
         else if (!strcmp(tokens[0], CMD_CLS))
         {
             system("cls");
+            retCode = DV_SUCCESS;
+        }
+        else if (!strcmp(tokens[0], CMD_DEBUG))
+        {
+            DV_DEBUG = !DV_DEBUG;
+            if (DV_DEBUG)
+            {
+                printf("Turned on debugging\n");
+            }
+            else
+            {
+                printf("Turned off debugging\n");
+            }
             retCode = DV_SUCCESS;
         }
         else if (!strcmp(tokens[0], CMD_CREATE_ACCOUNT))

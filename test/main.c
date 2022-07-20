@@ -7,7 +7,6 @@
 #include "../src/view/terminal/terminal.h"
 #include "../src/controller/dv_controller.h"
 
-int DV_DEBUG = 0;
 int DV_TESTMODE = 0;
 
 dv_app app;
