@@ -1016,3 +1016,51 @@ void dv_advanceStartIdx(btree_node *root, unsigned int skipBlock)
         }
     }
 }
+
+int dv_printDataFile(dv_app *dv)
+{
+    if (!dv->loggedIn)
+    {
+        return DV_LOGGED_OUT;
+    }
+
+    file_struct dataFile;
+    if (!file_openBlocks(&dataFile, data_fp, "rb", 16))
+    {
+        return DV_FILE_DNE;
+    }
+    unsigned int currentBlock = 1;
+    unsigned int noBlocks = dataFile.len >> 4; // len / 16
+
+    printf("Opened %s, %d blocks to read\n", data_fp, noBlocks);
+
+    // skip first block
+    file_advanceCursorBlocks(&dataFile, 1);
+
+    // copy IV
+    unsigned char *ivCopy = malloc(16);
+    memcpy(ivCopy, dv->random + dataIV_offset, 16);
+
+    while (currentBlock < noBlocks)
+    {
+        // skip blocks
+        aes_incrementCounter(ivCopy, 1);
+
+        // read block
+        char *enc = file_readBlocks(&dataFile, 1);
+        unsigned char *dec = NULL;
+        AES_DEC_BLK(dv, enc, ivCopy, &dec);
+
+        char *encHex = printByteArr(enc, 16, 0, 0, 0);
+        printHexString(dec, 16, encHex);
+        free(encHex);
+        free(enc);
+        free(dec);
+        currentBlock++;
+    }
+
+    file_close(&dataFile);
+    free(ivCopy);
+
+    return DV_SUCCESS;
+}
