@@ -201,6 +201,7 @@ void file_write(file_struct *f, void *buffer, int n)
     }
 
     fwrite(buffer, 1, n, f->fp);
+    f->cursor += n;
 }
 
 void file_writeBlocks(file_struct *f, void *buffer, int noBlocks)
@@ -210,7 +211,9 @@ void file_writeBlocks(file_struct *f, void *buffer, int noBlocks)
         return;
     }
 
+    int n = (f->blockSize ? f->blockSize : 1) * noBlocks;
     fwrite(buffer, f->blockSize ? f->blockSize : 1, noBlocks, f->fp);
+    f->cursor += n;
 }
 
 void file_close(file_struct *f)
