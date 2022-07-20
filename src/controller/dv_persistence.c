@@ -79,7 +79,7 @@ void readIdIdxMap(dv_app *dv, strstream stream)
         free(numStr);
 
         // read and parse idx
-        numStr = strstream_substrLength(&stream, i, 2);
+        numStr = strstream_substrLength(&stream, i + 4, 2);
         idx = smallEndianValue(numStr, 2);
         free(numStr);
 
@@ -105,17 +105,22 @@ void readCatIdMap(dv_app *dv, strstream stream)
             name = strstream_substrRange(&stream, startOfEntryIdx, i);
             idStr = strstream_substrLength(&stream, i + 1, 1);
 
+            unsigned int catId = smallEndianValue(idStr, 1);
+
             // insert into map
             dv->catIdMap = avl_insert(
                 dv->catIdMap,
                 name,
-                (void *)smallEndianValue(idStr, 1));
+                (void *)catId);
 
             // update cursors
             startOfEntryIdx = i + 2;
             i += 1;
 
             free(idStr);
+
+            // update counter
+            dv->maxCatId = MAX(dv->maxCatId, catId);
         }
     }
 }
