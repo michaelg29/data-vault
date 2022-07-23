@@ -490,6 +490,12 @@ int dv_createEntryData(dv_app *dv, const char *name, const char *category, const
                 // write as much data as possible
                 int n = MIN(16 - sizeof(unsigned short) - startIdx,
                             dataLen - dataCursor);
+
+                if (DV_DEBUG)
+                {
+                    printf("Write %d bytes from %d\n", n, startIdx);
+                }
+
                 if (n)
                 {
                     memcpy(dec + startIdx, data + dataCursor, n);
@@ -525,6 +531,16 @@ int dv_createEntryData(dv_app *dv, const char *name, const char *category, const
 
             conditionalFree(enc, free);
             conditionalFree(dec, free);
+        }
+
+        // determine increment and skip blocks
+        int increment = noBlocks - previousBlock;
+        if (increment)
+        {
+            // content to copy (skipped)
+            copy = file_readBlocks(&dataFile, increment);
+            file_writeBlocks(&dataOut, copy, increment);
+            free(copy);
         }
 
         free(ivCopy);
@@ -578,7 +594,6 @@ int dv_deleteEntryData(dv_app *dv, const char *name, const char *category)
     }
 
     strstream entryData = strstream_allocDefault();
-    dynamicarray occupiedBlocks = dynarr_defaultAllocate();
 
     unsigned char *ivCopy = NULL;
     unsigned char *ivCopyIn = NULL;
@@ -598,6 +613,8 @@ int dv_deleteEntryData(dv_app *dv, const char *name, const char *category)
             break;
         }
         unsigned int noBlocks = dataFile.len >> 4; // len / 16
+        bool *occupiedBlocks = malloc(noBlocks);
+        memset(occupiedBlocks, 0, noBlocks);
 
         // skip first block
         file_advanceCursorBlocks(&dataFile, 1);
@@ -613,7 +630,7 @@ int dv_deleteEntryData(dv_app *dv, const char *name, const char *category)
 
         while (currentBlock < noBlocks)
         {
-            dynarr_addLast(&occupiedBlocks, (void*)currentBlock);
+            occupiedBlocks[currentBlock] = true;
 
             // skip blocks
             int increment = currentBlock - previousBlock;
@@ -638,10 +655,15 @@ int dv_deleteEntryData(dv_app *dv, const char *name, const char *category)
             {
                 int endIdx = 16 - sizeof(short);
                 while (!nextBlock && dec[endIdx - 1]) endIdx--;
-                strstream_read(&entryData, dec, endIdx - startIdx);
+                strstream_read(&entryData, dec, endIdx);
+                if (DV_DEBUG)
+                {
+                    printf("Complete, reading 0 to %d\n", endIdx);
+                }
             }
             else
             {
+                startIdx = 0;
                 for (int i = 0; i < 14; i++)
                 {
                     if (!scanData)
@@ -657,6 +679,10 @@ int dv_deleteEntryData(dv_app *dv, const char *name, const char *category)
                             // read into data stream until entry
                             if (i)
                             {
+                                if (DV_DEBUG)
+                                {
+                                    printf("%d: Reading 0 to %d\n", currentBlock, i);
+                                }
                                 strstream_read(&entryData, dec, i);
                             }
                         }
@@ -671,29 +697,40 @@ int dv_deleteEntryData(dv_app *dv, const char *name, const char *category)
                         {
                             // finished reading target
                             startIdx = i + 1;
+                            onTarget = false;
                             complete = true;
                             break;
                         }
                     }
                 }
 
-                // read after block
-                if (!complete && startIdx >= 0 && startIdx < 16 - sizeof(short))
+                // read after data
+                if (!onTarget && startIdx >= 0 && startIdx < 16 - sizeof(short))
                 {
+                    // read to end of block unless last block
                     int endIdx = 16 - sizeof(short);
                     while (!nextBlock && dec[endIdx - 1]) endIdx--;
-                    strstream_read(&entryData, dec + startIdx, endIdx - startIdx);
+                    if (endIdx > 0 && endIdx > startIdx)
+                    {
+                        if (DV_DEBUG)
+                        {
+                            printf("%d: Reading %d to %d\n", currentBlock, startIdx, endIdx);
+                        }
+                        if (endIdx == 7 && startIdx == 0)
+                        {
+                            printf("Hello\n");
+                        }
+                        strstream_read(&entryData, dec + startIdx, endIdx - startIdx);
+                    }
                 }
             }
-
-            
 
             free(enc);
             free(dec);
 
             if (!nextBlock)
             {
-                // read all data
+                // all data has been read
                 break;
             }
 
@@ -701,19 +738,20 @@ int dv_deleteEntryData(dv_app *dv, const char *name, const char *category)
             previousBlock = currentBlock + 1;
             currentBlock = nextBlock;
         }
-        if (currentBlock != noBlocks - 1)
-        {
-            dynarr_addLast(&occupiedBlocks, (void*)noBlocks);
-        }
 
         file_close(&dataFile);
         free(ivCopy);
 
-        if (!(complete && onTarget))
+        if (!complete)
         {
             // not found
             retCode = DV_INVALID_INPUT;
             break;
+        }
+
+        if (!entryData.size)
+        {
+            strstream_concat(&entryData, "%c", 0x22);
         }
 
         // write to file
@@ -731,102 +769,137 @@ int dv_deleteEntryData(dv_app *dv, const char *name, const char *category)
             break;
         }
 
+        // copy first block
+        char *copy = file_readBlocks(&dataIn, 1);
+        file_writeBlocks(&dataOut, copy, 1);
+        free(copy);
+
         ivCopyIn = malloc(16);
         memcpy(ivCopyIn, dv->random + dataIV_offset, 16);
+        aes_incrementCounter(ivCopyIn, 1);
+        int ivCopyInInc = 0;
         ivCopyOut = malloc(16);
         memcpy(ivCopyOut, dv->random + dataIV_offset, 16);
+        aes_incrementCounter(ivCopyOut, 1);
+        int ivCopyOutInc = 0;
 
         // write all blocks in order
-        previousBlock = 0;
-        int listIdx = 0;
+        previousBlock = 1;
         int dataCursor = 0;
-        for (; listIdx < occupiedBlocks.size; listIdx++)
+        for (int listIdx = 1; listIdx < noBlocks; listIdx++)
         {
-            currentBlock = (unsigned int)occupiedBlocks.list[listIdx];
-
-            // determine increment and skip blocks
-            int increment = currentBlock - previousBlock;
-            if (dataCursor < entryData.size)
+            int offset = (dataIn.cursor - dataOut.cursor) >> 4;
+            if (DV_DEBUG)
             {
-                if (currentBlock <= noBlocks && increment) // & dataCursor < entryData.size
-                {
-                    // content to copy (skipped)
-                    char *copy = file_readBlocks(&dataIn, increment);
-                    file_writeBlocks(&dataOut, copy, increment);
-                    free(copy);
-                }
-                aes_incrementCounter(ivCopyIn, increment);
-                aes_incrementCounter(ivCopyOut, increment);
+                printf("blk %03d: (%d, %d; %d, %d); \n", listIdx, ivCopyInInc, dataIn.cursor, ivCopyOutInc, dataOut.cursor);
+            }
+            if (occupiedBlocks[listIdx])
+            {
+                // skip block
+                file_advanceCursorBlocks(&dataIn, 1);
 
-                // write entry data
-                int n = MIN(14, entryData.size - dataCursor);
-                dec = malloc(16);
-                memcpy(dec, entryData.str + dataCursor, n); // copy data
-                memset(dec + n, 0x22, 14 - n); // default value
-                dataCursor += n;
                 if (dataCursor < entryData.size)
                 {
-                    // write continuation block
-                    smallEndianStr((unsigned int)occupiedBlocks.list[listIdx + 1], dec + 14, 2);
+                    // write entry data
+                    int n = MIN(14, entryData.size - dataCursor);
+                    dec = malloc(16);
+                    memcpy(dec, entryData.str + dataCursor, n); // copy data
+                    memset(dec + n, 0x22, 14 - n); // default value
+                    dataCursor += n;
+                    if (dataCursor < entryData.size)
+                    {
+                        // write continuation block
+                        unsigned int continuationBlock = listIdx + 1;
+                        while (continuationBlock < noBlocks && !occupiedBlocks[continuationBlock]) continuationBlock++;
+                        smallEndianStr(continuationBlock, dec + 14, 2);
+                    }
+                    else
+                    {
+                        // no continuation block
+                        memset(dec + 14, 0, 2);
+                    }
+
+                    AES_ENC_BLK(dv, dec, ivCopyOut, (unsigned char **)&enc);
+                    file_writeBlocks(&dataOut, enc, 1);
+                    // increment writer IV
+                    aes_incrementCounter(ivCopyOut, 1);
+                    ivCopyOutInc++;
+                    
+                    free(enc);
+                    free(dec);
                 }
                 else
                 {
-                    // no continuation block
-                    memset(dec + 14, 0, 2);
+                    dv_advanceStartIdx(dv->idIdxMap.root, listIdx - 1);
                 }
-
-                AES_ENC_BLK(dv, dec, ivCopyOut, (unsigned char **)&enc);
-                file_writeBlocks(&dataOut, enc, 1);
-                
-                if (DV_DEBUG)
-                {
-                    printHexString(dec, 16, "modBlk");
-                    printHexString(enc, 16, "encMod");
-                }
-
-                free(enc);
-                free(dec);
             }
             else
             {
-                // skip input block
-                file_advanceCursorBlocks(&dataIn, 1);
-                aes_incrementCounter(ivCopyIn, 1);
-                for (int i = 1; i < increment; i++)
-                {
-                    aes_incrementCounter(ivCopyIn, 1);
-                    aes_incrementCounter(ivCopyOut, 1);
+                enc = file_readBlocks(&dataIn, 1);
 
-                    // decrypt and re-encrypt with new IV
-                    enc = file_readBlocks(&dataIn, 1);
+                if (!offset)
+                {
+                    // copy blocks raw
+                    file_writeBlocks(&dataOut, enc, 1);
+                }
+                else
+                {
+                    // must decrypt then re-encrypt with unsynced IVs
                     AES_DEC_BLK(dv, enc, ivCopyIn, &dec);
+
+                    // modify continuation block
+                    unsigned int continuationBlock = smallEndianValue(dec + 14, 2);
+                    if (continuationBlock)
+                    {
+                        int noBlocksLeft = (entryData.size - dataCursor + 13) / 14;
+                        unsigned int decrement = 0;
+                        for (int i = listIdx + 1; i < continuationBlock; i++)
+                        {
+                            if (occupiedBlocks[i])
+                            {
+                                noBlocksLeft--;
+                            }
+                        }
+                        decrement = noBlocksLeft < 0 ? -noBlocksLeft : 0;
+                        continuationBlock -= decrement + offset;
+                        smallEndianStr(continuationBlock, dec + 14, 2);
+                    }
+
                     AES_ENC_BLK(dv, dec, ivCopyOut, (unsigned char **)&enc);
                     file_writeBlocks(&dataOut, enc, 1);
 
-                    free(enc);
-                    free(dec);
+                    if (DV_DEBUG)
+                    {
+                        printHexString(dec, 16, "dec");
+                        printHexString(enc, 16, "enc");
+                    }
 
-                    // decrease startIdxs on subsequent entries
-                    dv_advanceStartIdx(dv->idIdxMap.root, currentBlock);
+                    free(dec);
                 }
+
+                free(enc);
+
+                // increment writer IV
+                aes_incrementCounter(ivCopyOut, 1);
+                ivCopyOutInc++;
             }
 
-            previousBlock = currentBlock;
+            // always increment reader IV
+            aes_incrementCounter(ivCopyIn, 1);
+            ivCopyInInc++;
         }
 
         file_close(&dataIn);
         file_close(&dataOut);
 
         file_copy(data_fp, data_tmp_fp);
+
+        free(occupiedBlocks);
     } while (false);
 
-    conditionalFree(ivCopy, free);
     conditionalFree(ivCopyIn, free);
     conditionalFree(ivCopyOut, free);
-    conditionalFree(dec, free);
-    conditionalFree(enc, free);
     strstream_clear(&entryData);
-    dynarr_free(&occupiedBlocks);
 
     return retCode;
 }
