@@ -4,8 +4,8 @@
 #include <stdarg.h>
 
 #include "../src/datavault.h"
-#include "../src/view/terminal/terminal.h"
 #include "../src/controller/dv_controller.h"
+#include "../src/view/terminal/terminal.h"
 
 int DV_TESTMODE = 0;
 
@@ -35,19 +35,19 @@ bool logTest(bool success, const char *format, ...)
 
 bool createAccount(const char *pwd)
 {
-    retCode = dv_createAccount(&app, (unsigned char*)pwd, strlen(pwd));
+    retCode = dv_createAccount(&app, (unsigned char *)pwd, strlen(pwd));
     return logTest(retCode == DV_SUCCESS, "Create account with password %s: %d\n", pwd, retCode);
 }
 
 bool login(const char *pwd)
 {
-    retCode = dv_login(&app, (unsigned char*)pwd, strlen(pwd));
+    retCode = dv_login(&app, (unsigned char *)pwd, strlen(pwd));
     return logTest(retCode == DV_SUCCESS, "Login with password %s: %d\n", pwd, retCode);
 }
 
 bool loginFail(const char *pwd)
 {
-    retCode = dv_login(&app, (unsigned char*)pwd, strlen(pwd));
+    retCode = dv_login(&app, (unsigned char *)pwd, strlen(pwd));
     return logTest(retCode == DV_INVALID_INPUT, "Fail login with password %s: %d\n", pwd, retCode);
 }
 
@@ -72,8 +72,8 @@ bool createData(const char *entryName, const char *categoryName, const char *dat
 bool accessData(const char *entryName, const char *categoryName, const char *expected)
 {
     retCode = dv_accessEntryData(&app, entryName, categoryName, &buf);
-    bool matches = !strcmp((const char*)buf, expected);
-    bool ret =  logTest(matches, "Access %s for entry %s: %s: %d\n", categoryName, entryName, buf, retCode);
+    bool matches = !strcmp((const char *)buf, expected);
+    bool ret = logTest(matches, "Access %s for entry %s: %s: %d\n", categoryName, entryName, buf, retCode);
     free(buf);
     return ret;
 }
@@ -104,7 +104,7 @@ bool deleteDataFailure(const char *entryName, const char *categoryName)
     return logTest(retCode == DV_INVALID_INPUT, "Delete non-existent %s for entry %s: %d\n", categoryName, entryName);
 }
 
-int main()
+int main(int argc, char *argv[])
 {
     printf("Hello, world!\n");
 
@@ -155,9 +155,13 @@ int main()
 
         printf("%d tests run, %d successes: %.2f%%\n", noTests, noSuccesses, (float)noSuccesses / (float)noTests * 100.0f);
     }
+    else if (argc > 2)
+    {
+        singleCmd(argc, argv);
+    }
     else
     {
-        run();
+        terminal();
     }
 
     printf("Goodbye, world!\n");

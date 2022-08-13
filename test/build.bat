@@ -1,4 +1,4 @@
-gcc -g -o C:/src/data-vault/test/run/main ^
+gcc -o C:/src/data-vault/test/run/main ^
 	C:/src/data-vault/test/main.c ^
 	C:/src/data-vault/src/datavault.c ^
 	C:/src/data-vault/src/controller/dv_controller.c ^
@@ -21,6 +21,3 @@ gcc -g -o C:/src/data-vault/test/run/main ^
 	C:/src/data-vault/src/lib/util/mem.c ^
 	C:/src/data-vault/src/view/terminal/terminal.c
 cd C:/src/data-vault/test/run
-gdb C:/src/data-vault/test/run/main
-cd C:\src\data-vault\test
-pause
