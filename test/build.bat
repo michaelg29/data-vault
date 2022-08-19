@@ -17,6 +17,7 @@ gcc -o C:/src/data-vault/test/run/main ^
 	C:/src/data-vault/src/lib/ds/btree.c ^
 	C:/src/data-vault/src/lib/ds/dynamicarray.c ^
 	C:/src/data-vault/src/lib/ds/strstream.c ^
+	C:/src/data-vault/src/lib/util/consoleio.c ^
 	C:/src/data-vault/src/lib/util/fileio.c ^
 	C:/src/data-vault/src/lib/util/mem.c ^
 	C:/src/data-vault/src/view/terminal/terminal.c

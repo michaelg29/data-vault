@@ -8,22 +8,10 @@
 #include "../../controller/dv_controller.h"
 #include "../../lib/cmathematics/cmathematics.h"
 #include "../../lib/ds/strstream.h"
+#include "../../lib/util/consoleio.h"
 
 dv_app app;
 int DV_DEBUG = 0;
-
-bool getConfirmation(const char *msg)
-{
-    char res = ' ';
-
-    while (!(res == 'y' || res == 'n'))
-    {
-        printf("%s (y/n)> ", msg);
-        res = getchar();
-    }
-
-    return res == 'y';
-}
 
 int processCommand(strstream *cmd)
 {
@@ -101,21 +89,23 @@ int processCommand(strstream *cmd)
         {
             dv_printDataFile(&app);
         }
+        else if (STREQ("createAct"))
+        {
+            char *pwd = getMaskedInput("PASSWORD> ");
+            retCode = dv_createAccount(&app, pwd, strlen(pwd));
+            free(pwd);
+        }
+        else if (STREQ("login"))
+        {
+            char *pwd = getMaskedInput("PASSWORD> ");
+            retCode = dv_login(&app, pwd, strlen(pwd));
+            free(pwd);
+        }
 
         // commands with one argument
         else if (n < 2)
         {
             retCode = DV_INVALID_CMD;
-        }
-        else if (STREQ("createAct"))
-        {
-            printf("Create account with password (%d): \"%s\"\n", strlen(tokens[1]), tokens[1]);
-            retCode = dv_createAccount(&app, tokens[1], strlen(tokens[1]));
-        }
-        else if (STREQ("login"))
-        {
-            printf("Logging in with password (%d): \"%s\"\n", strlen(tokens[1]), tokens[1]);
-            retCode = dv_login(&app, tokens[1], strlen(tokens[1]));
         }
         else if (STREQ("create"))
         {
@@ -140,6 +130,13 @@ int processCommand(strstream *cmd)
         {
             printf("Deleting data for %s under %s\n", argTokens[0], argTokens[1]);
             retCode = dv_deleteEntryData(&app, argTokens[0], argTokens[1]);
+        }
+        else if (STREQ("set") && argN == 2)
+        {
+            // set data as masked input
+            char *data = getMaskedInput("ENTER DATA> ");
+            retCode = dv_setEntryData(&app, argTokens[0], argTokens[1], data);
+            free(data);
         }
 
         // commands with three arguments
@@ -226,11 +223,49 @@ void singleCmd(int argc, char **argv)
 
     do
     {
+        int i = 1;
+
+        // find password
+        char *pwd = NULL;
+        bool freePwd = false;
+        if (strcmp(argv[1], "-p"))
+        {
+            // did not enter password
+            pwd = getMaskedInput("PASSWORD> ");
+            freePwd = true;
+        }
+        else
+        {
+            // password in command
+            pwd = argv[2];
+            i = 3; // command starts after password
+        }
+
+        // determine if we want to create an account
+        if (!strcmp(argv[i], "createAct"))
+        {
+            printf("Creating account\n");
+            res = dv_createAccount(&app, pwd, strlen(pwd));
+            if (res)
+            {
+                printf("Could not create account\n");
+                break;
+            }
+            ++i;
+        }
+
+        // determine if there is in fact a command
+        if (i >= argc)
+        {
+            break;
+        }
+
         // construct login command
-        cmd = strstream_fromStr("login ");
-        strstream_concat(&cmd, "%s", argv[1]);
-        // process command
-        res = processCommand(&cmd);
+        res = dv_login(&app, pwd, strlen(pwd));
+        if (freePwd)
+        {
+            free(pwd);
+        }
         if (res)
         {
             printf("Could not login\n");
@@ -241,8 +276,8 @@ void singleCmd(int argc, char **argv)
 
         // construct data command
         strstream_clear(&cmd);
-        cmd = strstream_fromStr(argv[2]);
-        for (int i = 3; i < argc; i++)
+        cmd = strstream_fromStr(argv[i++]);
+        for (; i < argc; i++)
         {
             strstream_concat(&cmd, " %s", argv[i]);
         }

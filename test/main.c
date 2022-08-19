@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
 
         printf("%d tests run, %d successes: %.2f%%\n", noTests, noSuccesses, (float)noSuccesses / (float)noTests * 100.0f);
     }
-    else if (argc > 2)
+    else if (argc > 1)
     {
         singleCmd(argc, argv);
     }
