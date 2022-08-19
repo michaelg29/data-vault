@@ -37,10 +37,11 @@ strstream strstream_fromStr(char *str)
 {
     int size = strlen(str);
 
-    strstream ret = strstream_alloc(size);
+    strstream ret = strstream_alloc(size + 1);
     if (ret.capacity)
     {
         memcpy(ret.str, str, size * sizeof(char));
+        ret.str[size] = 0;
         ret.size = size;
         strstream_terminate(&ret);
     }
