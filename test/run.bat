@@ -20,7 +20,8 @@ gcc -o C:/src/data-vault/test/run/main ^
 	C:/src/data-vault/src/lib/util/consoleio.c ^
 	C:/src/data-vault/src/lib/util/fileio.c ^
 	C:/src/data-vault/src/lib/util/mem.c ^
-	C:/src/data-vault/src/view/terminal/terminal.c
+	C:/src/data-vault/src/view/terminal/terminal.c ^
+	C:/src/data-vault/src/view/test/test.c
 cd C:/src/data-vault/test/run
 C:/src/data-vault/test/run/main
 cd C:\src\data-vault\test

@@ -12,6 +12,7 @@
         "src/lib/cmathematics/util",
         "src/lib/ds",
         "src/lib/util",
-        "src/view/terminal"
+        "src/view/terminal",
+        "src/view/test"
     ]
 }
