@@ -14,6 +14,7 @@ extern const char *dk_fp;
 
 int dv_initFiles(unsigned char *random);
 void dv_copyFiles(char *dstDir, char *srcDir);
+void dv_deleteFiles();
 
 int dv_load(dv_app *dv);
 int dv_save(dv_app *dv);

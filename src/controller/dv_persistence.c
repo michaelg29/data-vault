@@ -11,14 +11,16 @@
 #include <string.h>
 
 #define NO_FILES 7
+#define EXTENDED_NO_FILES 8
 
 #define IV_FP "iv.dv"
 #define DATA_FP "data.dv"
 #define NAMEIDMAP_FP "nameIdMap.dv"
 #define IDIDXMAP_FP "idIdxMap.dv"
-#define CATEGORYIDMAP_FP "categoryIdMap.dv"
+#define CATEGORYIDMAP_FP "catIdMap.dv"
 #define PWD_FP "pwd.dv"
 #define DK_FP "dk.dv"
+#define DATA_TMP_FP "data_tmp.dv"
 
 const char *iv_fp = "iv.dv";
 const char *data_fp = "data.dv";
@@ -29,14 +31,15 @@ const char *categoryIdMap_fp = "catIdMap.dv";
 const char *pwd_fp = "pwd.dv";
 const char *dk_fp = "dk.dv";
 
-const char *filePaths[NO_FILES] = {
+const char *filePaths[EXTENDED_NO_FILES] = {
     IV_FP,
     DATA_FP,
     NAMEIDMAP_FP,
     IDIDXMAP_FP,
     CATEGORYIDMAP_FP,
     PWD_FP,
-    DK_FP
+    DK_FP,
+    DATA_TMP_FP
 };
 
 int dv_initFiles(unsigned char *random)
@@ -59,18 +62,40 @@ int dv_initFiles(unsigned char *random)
 
 void dv_copyFiles(char *dstDir, char *srcDir)
 {
+    strstream srcDirStream = strstream_allocDefault();
+    if (srcDir && strlen(srcDir))
+    {
+        strstream_concat(&srcDirStream, "%s/", srcDir);
+    }
+
+    strstream dstDirStream = strstream_allocDefault();
+    if (dstDir && strlen(dstDir))
+    {
+        strstream_concat(&dstDirStream, "%s/", dstDir);
+    }
+
     for (int i = 0; i < NO_FILES; i++)
     {
         strstream srcPath = strstream_allocDefault();
         strstream dstPath = strstream_allocDefault();
 
-        strstream_concat(&srcPath, "%s/%s", srcDir, filePaths[i]);
-        strstream_concat(&dstPath, "%s/%s", dstDir, filePaths[i]);
+        strstream_concat(&srcPath, "%s%s", srcDirStream.str, filePaths[i]);
+        strstream_concat(&dstPath, "%s%s", dstDirStream.str, filePaths[i]);
 
         file_copy(dstPath.str, srcPath.str);
 
         strstream_clear(&srcPath);
         strstream_clear(&dstPath);
+    }
+}
+
+void dv_deleteFiles()
+{
+    for (int i = 0; i < EXTENDED_NO_FILES; i++)
+    {
+        strstream cmd = strstream_fromStr("del -f ");
+        strstream_concat(&cmd, "%s 2>nul", filePaths[i]);
+        system(cmd.str);
     }
 }
 
