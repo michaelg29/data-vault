@@ -10,6 +10,16 @@
 #include <stdio.h>
 #include <string.h>
 
+#define NO_FILES 7
+
+#define IV_FP "iv.dv"
+#define DATA_FP "data.dv"
+#define NAMEIDMAP_FP "nameIdMap.dv"
+#define IDIDXMAP_FP "idIdxMap.dv"
+#define CATEGORYIDMAP_FP "categoryIdMap.dv"
+#define PWD_FP "pwd.dv"
+#define DK_FP "dk.dv"
+
 const char *iv_fp = "iv.dv";
 const char *data_fp = "data.dv";
 const char *data_tmp_fp = "data_tmp.dv";
@@ -18,6 +28,16 @@ const char *idIdxMap_fp = "idIdxMap.dv";
 const char *categoryIdMap_fp = "catIdMap.dv";
 const char *pwd_fp = "pwd.dv";
 const char *dk_fp = "dk.dv";
+
+const char *filePaths[NO_FILES] = {
+    IV_FP,
+    DATA_FP,
+    NAMEIDMAP_FP,
+    IDIDXMAP_FP,
+    CATEGORYIDMAP_FP,
+    PWD_FP,
+    DK_FP
+};
 
 int dv_initFiles(unsigned char *random)
 {
@@ -35,6 +55,23 @@ int dv_initFiles(unsigned char *random)
     ret = file_writeContents(data_fp, random, 16);
 
     return ret ? DV_SUCCESS : DV_FILE_DNE;
+}
+
+void dv_copyFiles(char *dstDir, char *srcDir)
+{
+    for (int i = 0; i < NO_FILES; i++)
+    {
+        strstream srcPath = strstream_allocDefault();
+        strstream dstPath = strstream_allocDefault();
+
+        strstream_concat(&srcPath, "%s/%s", srcDir, filePaths[i]);
+        strstream_concat(&dstPath, "%s/%s", dstDir, filePaths[i]);
+
+        file_copy(dstPath.str, srcPath.str);
+
+        strstream_clear(&srcPath);
+        strstream_clear(&dstPath);
+    }
 }
 
 void readNameIdMap(dv_app *dv, strstream stream)
