@@ -229,7 +229,7 @@ void singleCmd(int argc, char **argv)
 
         // find username
         bool freeUser = false;
-        if (strcmp(argv[i], "-u"))
+        if (i >= argc || strcmp(argv[i], "-u"))
         {
             // did not enter username
             user = getMaskedInput("USERNAME> ");
@@ -269,17 +269,26 @@ void singleCmd(int argc, char **argv)
         // find password
         char *pwd = NULL;
         bool freePwd = false;
-        if (strcmp(argv[i], "-p"))
+        if (i < argc)
+        {
+            if (i < argc - 1 && !strcmp(argv[i], "-p"))
+            {
+                // password in command
+                pwd = argv[i + 1];
+                i += 2; // command starts after password
+            }
+            if (!strcmp(argv[i], "-penv"))
+            {
+                // get password through environment variable
+                pwd = getenv(argv[i + 1]);
+                i += 2;
+            }
+        }
+        if (i >= argc || !pwd)
         {
             // did not enter password
             pwd = getMaskedInput("PASSWORD> ");
             freePwd = true;
-        }
-        else
-        {
-            // password in command
-            pwd = argv[i + 1];
-            i += 2; // command starts after password
         }
 
         // determine if we want to create an account
