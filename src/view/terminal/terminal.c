@@ -6,9 +6,11 @@
 
 #include "../../datavault.h"
 #include "../../controller/dv_controller.h"
+#include "../../controller/dv_persistence.h"
 #include "../../lib/cmathematics/cmathematics.h"
 #include "../../lib/ds/strstream.h"
 #include "../../lib/util/consoleio.h"
+#include "../../lib/util/fileio.h"
 
 dv_app app;
 int DV_DEBUG = 0;
@@ -213,22 +215,61 @@ void terminal()
 
 void singleCmd(int argc, char **argv)
 {
-    printf("Hello, terminal\n");
-    system("cls");
-
     dv_init(&app);
 
     strstream cmd;
     int res = DV_SUCCESS;
 
+    char *user = NULL;
+    strstream userDir = strstream_fromStr("./");
+
     do
     {
         int i = 1;
 
+        // find username
+        bool freeUser = false;
+        if (strcmp(argv[i], "-u"))
+        {
+            // did not enter username
+            user = getMaskedInput("USERNAME> ");
+            freeUser = true;
+        }
+        else
+        {
+            // username in command
+            user = argv[i + 1];
+            i += 2;
+        }
+
+        // copy files to main directory
+        bool forceCreate = false;
+        strstream_concat(&userDir, user);
+        if (directoryExists(userDir.str))
+        {
+            dv_copyFiles(NULL, user);
+        }
+        else
+        {
+            printf("Could not find user\n");
+            
+            if (getConfirmation("Would you like to create a directory for this user?"))
+            {
+                forceCreate = true;
+                strstream dirCmd = strstream_fromStr("mkdir ");
+                strstream_concat(&dirCmd, user);
+                system(dirCmd.str);
+            }
+            else
+            {
+                break;
+            }
+        }
+
         // find password
         char *pwd = NULL;
         bool freePwd = false;
-        if (strcmp(argv[1], "-p"))
+        if (strcmp(argv[i], "-p"))
         {
             // did not enter password
             pwd = getMaskedInput("PASSWORD> ");
@@ -237,12 +278,12 @@ void singleCmd(int argc, char **argv)
         else
         {
             // password in command
-            pwd = argv[2];
-            i = 3; // command starts after password
+            pwd = argv[i + 1];
+            i += 2; // command starts after password
         }
 
         // determine if we want to create an account
-        if (!strcmp(argv[i], "createAct"))
+        if (forceCreate || !strcmp(argv[i], "createAct"))
         {
             printf("Creating account\n");
             res = dv_createAccount(&app, pwd, strlen(pwd));
@@ -251,7 +292,10 @@ void singleCmd(int argc, char **argv)
                 printf("Could not create account\n");
                 break;
             }
-            ++i;
+            if (!forceCreate)
+            {
+                ++i;
+            }
         }
 
         // determine if there is in fact a command
@@ -307,6 +351,13 @@ void singleCmd(int argc, char **argv)
         res = processCommand(&cmd);
     } while (false);
     strstream_clear(&cmd);
+
+    // copy files back to user directory
+    if (user)
+    {
+        dv_copyFiles(user, NULL);
+        dv_deleteFiles();
+    }
 
     dv_kill(&app);
 }
