@@ -87,9 +87,16 @@ bool file_copy(const char *dstPath, const char *srcPath)
 
     if (ret)
     {
-        char *in = file_read(&src, src.len);
-        file_write(&dst, in, src.len);
-        free(in);
+        int blkSize = 16;
+        int cursor = 0;
+        while (cursor < src.len)
+        {
+            int n = MIN(blkSize, src.len - cursor);
+            char *in = file_read(&src, n);
+            file_write(&dst, in, n);
+            free(in);
+            cursor += n;
+        }
     }
 
     file_close(&dst);
