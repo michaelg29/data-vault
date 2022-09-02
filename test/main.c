@@ -5,7 +5,7 @@
 #include "../src/view/terminal/terminal.h"
 #include "../src/view/test/test.h"
 
-int DV_TESTMODE = 1;
+int DV_TESTMODE = 0;
 
 int main(int argc, char *argv[])
 {
@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
     if (DV_TESTMODE)
     {
         printf("Testing");
-        
+
         const char *GITHUB = "GitHub";
         const char *GOOGLE = "Google";
         const char *USERNAME = "Username";
