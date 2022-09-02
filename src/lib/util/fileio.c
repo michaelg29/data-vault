@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <io.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 bool file_create(const char *path)
 {
@@ -223,4 +226,16 @@ void file_close(file_struct *f)
         fclose(f->fp);
         f->fp = NULL;
     }
+}
+
+bool directoryExists(const char *path)
+{
+    if (_access(path, 0) == 0)
+    {
+        struct stat status;
+        stat(path, &status);
+
+        return (status.st_mode & S_IFDIR) != 0;
+    }
+    return false;
 }

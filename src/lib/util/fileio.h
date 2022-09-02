@@ -40,4 +40,6 @@ void file_writeBlocks(file_struct *f, void *buffer, int noBlocks);
 
 void file_close(file_struct *f);
 
+bool directoryExists(const char *absolutePath);
+
 #endif // FILEIO_H
