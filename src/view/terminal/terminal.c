@@ -128,6 +128,30 @@ int processCommand(strstream *cmd)
             printf("Retrieved: %s\n", out);
             free(out);
         }
+        else if (STREQ("copy"))
+        {
+            printf("Copy data for %s under %s\n", argTokens[0], argTokens[1]);
+            char *out = NULL;
+            retCode = dv_accessEntryData(&app, argTokens[0], argTokens[1], &out);
+
+            if (!retCode)
+            {
+                strstream envStream = strstream_fromStr("dv-env=");
+
+                // set environment variable
+                strstream_concat(&envStream, out);
+                putenv(envStream.str);
+                strstream_clear(&envStream);
+
+                // copy to clipboard
+                system("echo %dv-env%|clip");
+
+                // clear environment variable
+                putenv("dv-env=");
+
+                free(out);
+            }
+        }
         else if (STREQ("del"))
         {
             printf("Deleting data for %s under %s\n", argTokens[0], argTokens[1]);
@@ -259,6 +283,7 @@ void singleCmd(int argc, char **argv)
                 strstream dirCmd = strstream_fromStr("mkdir ");
                 strstream_concat(&dirCmd, user);
                 system(dirCmd.str);
+                strstream_clear(&dirCmd);
             }
             else
             {
@@ -328,7 +353,6 @@ void singleCmd(int argc, char **argv)
         printf("Logged in\n");
 
         // construct data command
-        strstream_clear(&cmd);
         cmd = strstream_fromStr(argv[i++]);
         for (; i < argc; i++)
         {
