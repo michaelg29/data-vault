@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../src/datavault.h"
-#include "../src/view/terminal/terminal.h"
-#include "../src/view/test/test.h"
+#include "datavault.h"
+#include "view/terminal/terminal.h"
+#include "view/test/test.h"
 
 int DV_TESTMODE = 0;
 

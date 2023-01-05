@@ -47,14 +47,13 @@ pause""")
 
     # write build command
     with open(f"build.bat", "w") as buildFile:
-        buildFile.write(f"""gcc -o {runDir}/{outputFile}{escape}{escape.join(filePaths)}
-cd {runDir}""")
+        buildFile.write(f"""gcc -o {runDir}/{outputFile}{escape}{escape.join(filePaths)}""")
 
     # write run command
     with open(f"run.bat", "w") as runFile:
         runFile.write(f"""gcc -o {runDir}/{outputFile}{escape}{escape.join(filePaths)}
 cd {runDir}
-{runDir}/{outputFile}
+{runDir}/{outputFile} %*
 cd {os.getcwd()}
 pause""")
 

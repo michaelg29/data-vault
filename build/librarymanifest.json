@@ -1,8 +1,8 @@
 {
-    "dstRoot": "C:/src/data-vault",
+    "dstRoot": "C:/Users/Michael/src/data-vault",
     "copyManifest": [
         {
-            "src": "C:/src/yt-challenges/22 - Generic Lists",
+            "src": "C:/Users/Michael/src/yt-challenges/22 - Generic Lists",
             "dst": "src/lib/ds",
             "inclusions": [
                 "dynamicarray.h",
@@ -10,7 +10,7 @@
             ]
         },
         {
-            "src": "C:/src/yt-challenges/26 - AVL Trees",
+            "src": "C:/Users/Michael/src/yt-challenges/26 - AVL Trees",
             "dst": "src/lib/ds",
             "inclusions": [
                 "avl.h",
@@ -18,7 +18,7 @@
             ]
         },
         {
-            "src": "C:/src/yt-challenges/27 - String Streams",
+            "src": "C:/Users/Michael/src/yt-challenges/27 - String Streams",
             "dst": "src/lib/ds",
             "inclusions": [
                 "strstream.h",
@@ -26,7 +26,7 @@
             ]
         },
         {
-            "src": "C:/src/yt-challenges/30 - B-Tree",
+            "src": "C:/Users/Michael/src/yt-challenges/30 - B-Tree",
             "dst": "src/lib/ds",
             "inclusions": [
                 "btree.h",
@@ -34,7 +34,7 @@
             ]
         },
         {
-            "src": "C:/src/cmathematics/cmathematics",
+            "src": "C:/Users/Michael/src/cmathematics/cmathematics",
             "dst": "src/lib/cmathematics",
             "inclusions": [
                 "cmathematics.h",
