@@ -9,8 +9,6 @@ int DV_TESTMODE = 0;
 
 int main(int argc, char *argv[])
 {
-    printf("Hello, world!\n");
-
     int res = DV_SUCCESS;
 
     if (DV_TESTMODE)
