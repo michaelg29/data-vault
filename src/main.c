@@ -28,10 +28,10 @@ int main(int argc, char *argv[])
 
         init();
 
-        createAccount("testPwd");
-        loginFail("test");
+        createAccount("test", "testPwd");
+        loginFail("test", "test");
 
-        if (login("testPwd"))
+        if (login("test", "testPwd"))
         {
             createEntry(GITHUB);
             accessDataFailure(GITHUB, PASSWORD);

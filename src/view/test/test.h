@@ -1,8 +1,8 @@
 #include "../../lib/cmathematics/cmathematics.h"
 
-bool createAccount(const char *pwd);
-bool login(const char *pwd);
-bool loginFail(const char *pwd);
+bool createAccount(const char *user, const char *pwd);
+bool login(const char *user, const char *pwd);
+bool loginFail(const char *user, const char *pwd);
 bool logout();
 bool createEntry(const char *entryName);
 bool createData(const char *entryName, const char *categoryName, const char *data);

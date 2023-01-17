@@ -32,21 +32,21 @@ bool logTest(bool success, const char *format, ...)
     return success;
 }
 
-bool createAccount(const char *pwd)
+bool createAccount(const char *username, const char *pwd)
 {
-    retCode = dv_createAccount(&app, (unsigned char *)pwd, strlen(pwd));
+    retCode = dv_createAccount(&app, (unsigned char *)username, (unsigned char *)pwd, strlen(pwd));
     return logTest(retCode == DV_SUCCESS, "Create account with password %s: %d\n", pwd, retCode);
 }
 
-bool login(const char *pwd)
+bool login(const char *username, const char *pwd)
 {
-    retCode = dv_login(&app, (unsigned char *)pwd, strlen(pwd));
+    retCode = dv_login(&app, (unsigned char *)username, (unsigned char *)pwd, strlen(pwd));
     return logTest(retCode == DV_SUCCESS, "Login with password %s: %d\n", pwd, retCode);
 }
 
-bool loginFail(const char *pwd)
+bool loginFail(const char *username, const char *pwd)
 {
-    retCode = dv_login(&app, (unsigned char *)pwd, strlen(pwd));
+    retCode = dv_login(&app, (unsigned char *)username, (unsigned char *)pwd, strlen(pwd));
     return logTest(retCode == DV_INVALID_INPUT, "Fail login with password %s: %d\n", pwd, retCode);
 }
 

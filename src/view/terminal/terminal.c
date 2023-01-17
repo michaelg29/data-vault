@@ -93,14 +93,16 @@ int processCommand(strstream *cmd)
         }
         else if (STREQ("createAct"))
         {
+            char *user = getMaskedInput("USERNAME> ");
             char *pwd = getMaskedInput("PASSWORD> ");
-            retCode = dv_createAccount(&app, pwd, strlen(pwd));
+            retCode = dv_createAccount(&app, user, pwd, strlen(pwd));
             free(pwd);
         }
         else if (STREQ("login"))
         {
+            char *user = getMaskedInput("USERNAME> ");
             char *pwd = getMaskedInput("PASSWORD> ");
-            retCode = dv_login(&app, pwd, strlen(pwd));
+            retCode = dv_login(&app, user, pwd, strlen(pwd));
             free(pwd);
         }
 
@@ -245,7 +247,6 @@ void singleCmd(int argc, char **argv)
     int res = DV_SUCCESS;
 
     char *user = NULL;
-    strstream userDir = strstream_fromStr("./");
 
     do
     {
@@ -264,31 +265,6 @@ void singleCmd(int argc, char **argv)
             // username in command
             user = argv[i + 1];
             i += 2;
-        }
-
-        // copy files to main directory
-        bool forceCreate = false;
-        strstream_concat(&userDir, user);
-        if (directoryExists(userDir.str))
-        {
-            dv_copyFiles(NULL, user);
-        }
-        else
-        {
-            printf("Could not find user\n");
-            
-            if (getConfirmation("Would you like to create a directory for this user?"))
-            {
-                forceCreate = true;
-                strstream dirCmd = strstream_fromStr("mkdir ");
-                strstream_concat(&dirCmd, user);
-                system(dirCmd.str);
-                strstream_clear(&dirCmd);
-            }
-            else
-            {
-                break;
-            }
         }
 
         // find password
@@ -317,19 +293,16 @@ void singleCmd(int argc, char **argv)
         }
 
         // determine if we want to create an account
-        if (forceCreate || !strcmp(argv[i], "createAct"))
+        if (!strcmp(argv[i], "createAct"))
         {
             printf("Creating account\n");
-            res = dv_createAccount(&app, pwd, strlen(pwd));
+            res = dv_createAccount(&app, user, pwd, strlen(pwd));
             if (res)
             {
                 printf("Could not create account\n");
                 break;
             }
-            if (!forceCreate)
-            {
-                ++i;
-            }
+            ++i;
         }
 
         // determine if there is in fact a command
@@ -339,7 +312,7 @@ void singleCmd(int argc, char **argv)
         }
 
         // construct login command
-        res = dv_login(&app, pwd, strlen(pwd));
+        res = dv_login(&app, user, pwd, strlen(pwd));
         if (freePwd)
         {
             free(pwd);
@@ -384,13 +357,6 @@ void singleCmd(int argc, char **argv)
         res = processCommand(&cmd);
     } while (false);
     strstream_clear(&cmd);
-
-    // copy files back to user directory
-    if (user)
-    {
-        dv_copyFiles(user, NULL);
-        dv_deleteFiles();
-    }
 
     dv_kill(&app);
 }
