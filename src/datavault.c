@@ -9,7 +9,7 @@
 
 #include "lib/util/mem.h"
 
-void dv_init(dv_app *dv)
+int dv_init(dv_app *dv)
 {
     // initialize state
     dv->loggedIn = false;
@@ -29,9 +29,11 @@ void dv_init(dv_app *dv)
     dv->maxCatId = 0;
 
     dv_initPersistence();
+
+    return DV_SUCCESS;
 }
 
-void dv_kill(dv_app *dv)
+int dv_kill(dv_app *dv)
 {
     // reset state
     dv->loggedIn = false;
@@ -55,6 +57,8 @@ void dv_kill(dv_app *dv)
 
     dv->maxEntryId = 0;
     dv->maxCatId = 0;
+
+    return DV_SUCCESS;
 }
 
 dv_app *logDv = NULL;

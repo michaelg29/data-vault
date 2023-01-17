@@ -11,6 +11,8 @@ int main(int argc, char *argv[])
 {
     printf("Hello, world!\n");
 
+    int res = DV_SUCCESS;
+
     if (DV_TESTMODE)
     {
         printf("Testing");
@@ -58,17 +60,19 @@ int main(int argc, char *argv[])
 
         printMetrics();
         cleanup();
+
+        res = DV_SUCCESS;
     }
     else if (argc > 1)
     {
-        singleCmd(argc, argv);
+        res = singleCmd(argc, argv);
     }
     else
     {
-        terminal();
+        res = terminal();
     }
 
-    printf("Goodbye, world!\n");
+    printf("Exiting with code %d\n", res);
 
-    return 0;
+    return res;
 }

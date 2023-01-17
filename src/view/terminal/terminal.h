@@ -5,7 +5,7 @@
 #define DV_INVALID_CMD -2
 
 // open a continuous terminal session
-void terminal();
+int terminal();
 
 // run a single command with credentials
 /*
@@ -21,6 +21,6 @@ void terminal();
  * IF CREATE ACCOUNT WITHOUT PASSWORD, TRIGGERS A PROMPT:
  * dv.exe createAct <COMMAND>
  */
-void singleCmd(int argc, char **argv);
+int singleCmd(int argc, char **argv);
 
 #endif // TERMINAL_H

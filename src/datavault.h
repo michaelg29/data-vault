@@ -34,8 +34,8 @@ typedef struct
     unsigned char maxCatId;
 } dv_app;
 
-void dv_init(dv_app *dv);
-void dv_kill(dv_app *dv);
+int dv_init(dv_app *dv);
+int dv_kill(dv_app *dv);
 void dv_log(dv_app *dv);
 
 #endif // DATAVAULT_H

@@ -192,7 +192,7 @@ int processCommand(strstream *cmd)
     return retCode;
 }
 
-void terminal()
+int terminal()
 {
     printf("Hello, terminal\n");
     system("cls");
@@ -236,10 +236,10 @@ void terminal()
         strstream_clear(&cmd);
     }
 
-    dv_kill(&app);
+    return dv_kill(&app);
 }
 
-void singleCmd(int argc, char **argv)
+int singleCmd(int argc, char **argv)
 {
     dv_init(&app);
 
@@ -358,5 +358,7 @@ void singleCmd(int argc, char **argv)
     } while (false);
     strstream_clear(&cmd);
 
-    dv_kill(&app);
+    res = dv_kill(&app);
+
+    return res;
 }
