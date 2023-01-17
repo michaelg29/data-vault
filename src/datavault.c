@@ -1,4 +1,5 @@
 #include "datavault.h"
+#include "controller/dv_persistence.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -26,6 +27,8 @@ void dv_init(dv_app *dv)
 
     dv->maxEntryId = 0;
     dv->maxCatId = 0;
+
+    dv_initPersistence();
 }
 
 void dv_kill(dv_app *dv)

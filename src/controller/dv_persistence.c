@@ -42,6 +42,36 @@ const char *filePaths[EXTENDED_NO_FILES] = {
     DATA_TMP_FP
 };
 
+void dv_initPersistence()
+{
+    char *envPath = getenv("DV_HOME");
+    file_setDefaultPath(envPath);
+    free(envPath);
+}
+
+void dv_setUserDirectory(char *user)
+{
+    // get environment variable
+    char *envPath = getenv("DV_HOME");
+
+    // concat user directory
+    char path[512];
+    sprintf(path, "%s\\%s", envPath ? envPath : ".", user);
+
+    if (!directoryExists(path))
+    {
+        printf("Creating directory %s\n", path);
+        strstream dirCmd = strstream_fromStr("mkdir ");
+        strstream_concat(&dirCmd, path);
+        system(dirCmd.str);
+        strstream_clear(&dirCmd);
+    }
+
+    file_setDefaultPath(path);
+
+    conditionalFree(envPath, free);
+}
+
 int dv_initFiles(unsigned char *random)
 {
     bool ret = true;

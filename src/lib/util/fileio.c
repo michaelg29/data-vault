@@ -7,6 +7,22 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+char defaultPath[256] = { 0 };
+
+void file_setDefaultPath(char *path)
+{
+    if (path)
+    {
+        strcpy(defaultPath, path);
+    }
+    else
+    {
+        defaultPath[0] = '.';
+    }
+
+    printf("Default dir set to %s\n", defaultPath);
+}
+
 bool file_create(const char *path)
 {
     file_struct newFile;
@@ -112,7 +128,17 @@ bool file_open(file_struct *f, const char *path, const char *mode)
 
 bool file_openBlocks(file_struct *f, const char *path, const char *mode, unsigned int blockSize)
 {
-    f->fp = fopen(path, mode);
+    char fullPath[512];
+    if (defaultPath[0])
+    {
+        sprintf(fullPath, "%s\\%s", defaultPath, path);
+    }
+    else
+    {
+        strcpy(fullPath, path);
+    }
+
+    f->fp = fopen(fullPath, mode);
     if (!f->fp)
     {
         return false;

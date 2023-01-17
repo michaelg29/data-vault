@@ -368,7 +368,11 @@ void strstream_writeFile(strstream *s, FILE *file, unsigned int first, unsigned 
 */
 void strstream_clear(strstream *s)
 {
-    free(s->str);
+    if (s->str)
+    {
+        free(s->str);
+        s->str = NULL;
+    }
     s->size = 0;
     s->capacity = 0;
 }

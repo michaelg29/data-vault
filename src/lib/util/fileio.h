@@ -15,6 +15,8 @@ typedef struct
     int blockSize;
 } file_struct;
 
+void file_setDefaultPath(char *path);
+
 bool file_create(const char *path);
 char *file_readContents(const char *path);
 bool file_writeContents(const char *path, void *buffer, int n);
