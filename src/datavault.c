@@ -1,4 +1,5 @@
 #include "datavault.h"
+#include "controller/dv_persistence.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -8,7 +9,7 @@
 
 #include "lib/util/mem.h"
 
-void dv_init(dv_app *dv)
+int dv_init(dv_app *dv)
 {
     // initialize state
     dv->loggedIn = false;
@@ -26,9 +27,13 @@ void dv_init(dv_app *dv)
 
     dv->maxEntryId = 0;
     dv->maxCatId = 0;
+
+    dv_initPersistence();
+
+    return DV_SUCCESS;
 }
 
-void dv_kill(dv_app *dv)
+int dv_kill(dv_app *dv)
 {
     // reset state
     dv->loggedIn = false;
@@ -52,6 +57,8 @@ void dv_kill(dv_app *dv)
 
     dv->maxEntryId = 0;
     dv->maxCatId = 0;
+
+    return DV_SUCCESS;
 }
 
 dv_app *logDv = NULL;
@@ -71,11 +78,6 @@ void dv_log(dv_app *dv)
     printf("Logged in: %s\n", dv->loggedIn ? "true" : "false");
     if (dv->loggedIn)
     {
-        /*
-avl *nameIdMap;
-    btree idIdxMap;
-    avl *catIdMap;
-        */
         logDv = dv;
 
         printf("Entries==============\n");
@@ -83,7 +85,6 @@ avl *nameIdMap;
         if (dv->nameIdMap && dv->nameIdMap->key) {
             avl_inorderTraverse(dv->nameIdMap, printEntryId);
         }
-       
 
         printf("Categories===========\n");
         printf("Name --> id\n");

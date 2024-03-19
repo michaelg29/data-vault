@@ -15,6 +15,8 @@ typedef struct
     int blockSize;
 } file_struct;
 
+void file_setDefaultPath(char *path);
+
 bool file_create(const char *path);
 char *file_readContents(const char *path);
 bool file_writeContents(const char *path, void *buffer, int n);
@@ -39,5 +41,7 @@ void file_write(file_struct *f, void *buffer, int n);
 void file_writeBlocks(file_struct *f, void *buffer, int noBlocks);
 
 void file_close(file_struct *f);
+
+bool directoryExists(const char *absolutePath);
 
 #endif // FILEIO_H

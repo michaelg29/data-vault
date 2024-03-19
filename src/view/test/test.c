@@ -1,13 +1,12 @@
-#include <stdio.h>
+#include "test.h"
+
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include <stdarg.h>
 
-#include "../src/datavault.h"
-#include "../src/view/terminal/terminal.h"
-#include "../src/controller/dv_controller.h"
-
-int DV_TESTMODE = 0;
+#include "../../datavault.h"
+#include "../../controller/dv_controller.h"
 
 dv_app app;
 int retCode = 0;
@@ -33,21 +32,21 @@ bool logTest(bool success, const char *format, ...)
     return success;
 }
 
-bool createAccount(const char *pwd)
+bool createAccount(const char *username, const char *pwd)
 {
-    retCode = dv_createAccount(&app, (unsigned char*)pwd, strlen(pwd));
+    retCode = dv_createAccount(&app, (unsigned char *)username, (unsigned char *)pwd, strlen(pwd));
     return logTest(retCode == DV_SUCCESS, "Create account with password %s: %d\n", pwd, retCode);
 }
 
-bool login(const char *pwd)
+bool login(const char *username, const char *pwd)
 {
-    retCode = dv_login(&app, (unsigned char*)pwd, strlen(pwd));
+    retCode = dv_login(&app, (unsigned char *)username, (unsigned char *)pwd, strlen(pwd));
     return logTest(retCode == DV_SUCCESS, "Login with password %s: %d\n", pwd, retCode);
 }
 
-bool loginFail(const char *pwd)
+bool loginFail(const char *username, const char *pwd)
 {
-    retCode = dv_login(&app, (unsigned char*)pwd, strlen(pwd));
+    retCode = dv_login(&app, (unsigned char *)username, (unsigned char *)pwd, strlen(pwd));
     return logTest(retCode == DV_INVALID_INPUT, "Fail login with password %s: %d\n", pwd, retCode);
 }
 
@@ -72,8 +71,8 @@ bool createData(const char *entryName, const char *categoryName, const char *dat
 bool accessData(const char *entryName, const char *categoryName, const char *expected)
 {
     retCode = dv_accessEntryData(&app, entryName, categoryName, &buf);
-    bool matches = !strcmp((const char*)buf, expected);
-    bool ret =  logTest(matches, "Access %s for entry %s: %s: %d\n", categoryName, entryName, buf, retCode);
+    bool matches = !strcmp((const char *)buf, expected);
+    bool ret = logTest(matches, "Access %s for entry %s: %s: %d\n", categoryName, entryName, buf, retCode);
     free(buf);
     return ret;
 }
@@ -104,63 +103,17 @@ bool deleteDataFailure(const char *entryName, const char *categoryName)
     return logTest(retCode == DV_INVALID_INPUT, "Delete non-existent %s for entry %s: %d\n", categoryName, entryName);
 }
 
-int main()
+void printMetrics()
 {
-    printf("Hello, world!\n");
+    printf("%d tests run, %d successes: %.2f%%\n", noTests, noSuccesses, (float)noSuccesses / (float)noTests * 100.0f);
+}
 
-    if (DV_TESTMODE)
-    {
-        const char *GITHUB = "GitHub";
-        const char *GOOGLE = "Google";
-        const char *USERNAME = "Username";
-        const char *PASSWORD = "Password";
+void init()
+{
+    dv_init(&app);
+}
 
-        const char *GH_USER = "michaelg29";
-        const char *GH_PWD = "gh_pwd";
-        const char *GG_USER = "michaelgrieco27";
-        const char *GG_PWD = "gg_pwd";
-        const char *GG_PWD2 = "gg_pwd2";
-
-        dv_init(&app);
-
-        createAccount("testPwd");
-        loginFail("test");
-
-        if (login("testPwd"))
-        {
-            createEntry(GITHUB);
-            accessDataFailure(GITHUB, PASSWORD);
-            createData(GITHUB, PASSWORD, GH_PWD);
-            accessData(GITHUB, PASSWORD, GH_PWD);
-            createEntry(GOOGLE);
-            accessDataFailure(GOOGLE, PASSWORD);
-            accessData(GITHUB, PASSWORD, GH_PWD);
-            createData(GOOGLE, PASSWORD, GG_PWD);
-            createData(GOOGLE, USERNAME, GG_USER);
-            accessDataFailure(GITHUB, USERNAME);
-            createData(GITHUB, USERNAME, GH_USER);
-            accessData(GOOGLE, PASSWORD, GG_PWD);
-            accessData(GOOGLE, USERNAME, GG_USER);
-            deleteData(GOOGLE, USERNAME);
-            accessDataFailure(GOOGLE, USERNAME);
-            modifyData(GOOGLE, PASSWORD, GG_PWD2);
-            accessData(GOOGLE, PASSWORD, GG_PWD2);
-            modifyData(GOOGLE, USERNAME, GG_USER);
-            accessData(GOOGLE, USERNAME, GG_USER);
-
-            logout();
-        }
-
-        dv_kill(&app);
-
-        printf("%d tests run, %d successes: %.2f%%\n", noTests, noSuccesses, (float)noSuccesses / (float)noTests * 100.0f);
-    }
-    else
-    {
-        run();
-    }
-
-    printf("Goodbye, world!\n");
-
-    return 0;
+void cleanup()
+{
+    dv_kill(&app);
 }

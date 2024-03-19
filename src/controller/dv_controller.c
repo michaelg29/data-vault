@@ -30,8 +30,10 @@ const unsigned int catIdIV_offset = 0x60;
 #define AES_ENC_BLK(dv, in, iv, out) aes_encrypt_withSchedule(in, 16, dv->aes_key_schedule, AES_256_NR, AES_CTR, iv, out)
 #define AES_DEC_BLK(dv, in, iv, out) aes_decrypt_withSchedule(in, 16, dv->aes_key_schedule, AES_256_NR, AES_CTR, iv, out)
 
-int dv_createAccount(dv_app *dv, unsigned char *userPwd, int n)
+int dv_createAccount(dv_app *dv, unsigned char *username, unsigned char *userPwd, int n)
 {
+    dv_setUserDirectory(username);
+
     // input validation
     if (!n || !userPwd)
     {
@@ -120,7 +122,7 @@ int dv_createAccount(dv_app *dv, unsigned char *userPwd, int n)
     return retCode;
 }
 
-int dv_login(dv_app *dv, unsigned char *userPwd, int n)
+int dv_login(dv_app *dv, unsigned char *username, unsigned char *userPwd, int n)
 {
     int retCode = DV_SUCCESS;
 
@@ -131,10 +133,16 @@ int dv_login(dv_app *dv, unsigned char *userPwd, int n)
     char *encDataKey = NULL;
     unsigned char *tmp = NULL;
 
+    if (DV_DEBUG)
+    {
+        printf("Logging in for %s\n", username);
+    }
+
     do
     {
         // initialize memory
         dv_init(dv);
+        dv_setUserDirectory(username);
 
         // read salts/ivs
         if (!(dv->random = file_readContents(iv_fp)))

@@ -10,6 +10,18 @@
 #include <stdio.h>
 #include <string.h>
 
+#define NO_FILES 7
+#define EXTENDED_NO_FILES 8
+
+#define IV_FP "iv.dv"
+#define DATA_FP "data.dv"
+#define NAMEIDMAP_FP "nameIdMap.dv"
+#define IDIDXMAP_FP "idIdxMap.dv"
+#define CATEGORYIDMAP_FP "catIdMap.dv"
+#define PWD_FP "pwd.dv"
+#define DK_FP "dk.dv"
+#define DATA_TMP_FP "data_tmp.dv"
+
 const char *iv_fp = "iv.dv";
 const char *data_fp = "data.dv";
 const char *data_tmp_fp = "data_tmp.dv";
@@ -18,6 +30,47 @@ const char *idIdxMap_fp = "idIdxMap.dv";
 const char *categoryIdMap_fp = "catIdMap.dv";
 const char *pwd_fp = "pwd.dv";
 const char *dk_fp = "dk.dv";
+
+const char *filePaths[EXTENDED_NO_FILES] = {
+    IV_FP,
+    DATA_FP,
+    NAMEIDMAP_FP,
+    IDIDXMAP_FP,
+    CATEGORYIDMAP_FP,
+    PWD_FP,
+    DK_FP,
+    DATA_TMP_FP
+};
+
+void dv_initPersistence()
+{
+    char *envPath = getenv("DV_HOME");
+    file_setDefaultPath(envPath);
+    free(envPath);
+}
+
+void dv_setUserDirectory(char *user)
+{
+    // get environment variable
+    char *envPath = getenv("DV_HOME");
+
+    // concat user directory
+    char path[512];
+    sprintf(path, "%s\\%s", envPath ? envPath : ".", user);
+
+    if (!directoryExists(path))
+    {
+        printf("Creating directory %s\n", path);
+        strstream dirCmd = strstream_fromStr("mkdir ");
+        strstream_concat(&dirCmd, path);
+        system(dirCmd.str);
+        strstream_clear(&dirCmd);
+    }
+
+    file_setDefaultPath(path);
+
+    conditionalFree(envPath, free);
+}
 
 int dv_initFiles(unsigned char *random)
 {
@@ -35,6 +88,45 @@ int dv_initFiles(unsigned char *random)
     ret = file_writeContents(data_fp, random, 16);
 
     return ret ? DV_SUCCESS : DV_FILE_DNE;
+}
+
+void dv_copyFiles(char *dstDir, char *srcDir)
+{
+    strstream srcDirStream = strstream_allocDefault();
+    if (srcDir && strlen(srcDir))
+    {
+        strstream_concat(&srcDirStream, "%s/", srcDir);
+    }
+
+    strstream dstDirStream = strstream_allocDefault();
+    if (dstDir && strlen(dstDir))
+    {
+        strstream_concat(&dstDirStream, "%s/", dstDir);
+    }
+
+    for (int i = 0; i < NO_FILES; i++)
+    {
+        strstream srcPath = strstream_allocDefault();
+        strstream dstPath = strstream_allocDefault();
+
+        strstream_concat(&srcPath, "%s%s", srcDirStream.str, filePaths[i]);
+        strstream_concat(&dstPath, "%s%s", dstDirStream.str, filePaths[i]);
+
+        file_copy(dstPath.str, srcPath.str);
+
+        strstream_clear(&srcPath);
+        strstream_clear(&dstPath);
+    }
+}
+
+void dv_deleteFiles()
+{
+    for (int i = 0; i < EXTENDED_NO_FILES; i++)
+    {
+        strstream cmd = strstream_fromStr("del -f ");
+        strstream_concat(&cmd, "%s 2>nul", filePaths[i]);
+        system(cmd.str);
+    }
 }
 
 void readNameIdMap(dv_app *dv, strstream stream)

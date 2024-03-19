@@ -3,6 +3,25 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <io.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
+char defaultPath[256] = { 0 };
+
+void file_setDefaultPath(char *path)
+{
+    if (path)
+    {
+        strcpy(defaultPath, path);
+    }
+    else
+    {
+        defaultPath[0] = '.';
+    }
+
+    printf("Default dir set to %s\n", defaultPath);
+}
 
 bool file_create(const char *path)
 {
@@ -84,9 +103,16 @@ bool file_copy(const char *dstPath, const char *srcPath)
 
     if (ret)
     {
-        char *in = file_read(&src, src.len);
-        file_write(&dst, in, src.len);
-        free(in);
+        int blkSize = 16;
+        int cursor = 0;
+        while (cursor < src.len)
+        {
+            int n = MIN(blkSize, src.len - cursor);
+            char *in = file_read(&src, n);
+            file_write(&dst, in, n);
+            free(in);
+            cursor += n;
+        }
     }
 
     file_close(&dst);
@@ -102,7 +128,17 @@ bool file_open(file_struct *f, const char *path, const char *mode)
 
 bool file_openBlocks(file_struct *f, const char *path, const char *mode, unsigned int blockSize)
 {
-    f->fp = fopen(path, mode);
+    char fullPath[512];
+    if (defaultPath[0])
+    {
+        sprintf(fullPath, "%s\\%s", defaultPath, path);
+    }
+    else
+    {
+        strcpy(fullPath, path);
+    }
+
+    f->fp = fopen(fullPath, mode);
     if (!f->fp)
     {
         return false;
@@ -223,4 +259,16 @@ void file_close(file_struct *f)
         fclose(f->fp);
         f->fp = NULL;
     }
+}
+
+bool directoryExists(const char *path)
+{
+    if (_access(path, 0) == 0)
+    {
+        struct stat status;
+        stat(path, &status);
+
+        return (status.st_mode & S_IFDIR) != 0;
+    }
+    return false;
 }

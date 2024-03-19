@@ -11,8 +11,8 @@ extern const unsigned int nameIdIV_offset;
 extern const unsigned int idIdxIV_offset;
 extern const unsigned int catIdIV_offset;
 
-int dv_createAccount(dv_app *dv, unsigned char *userPwd, int n);
-int dv_login(dv_app *dv, unsigned char *userPwd, int n);
+int dv_createAccount(dv_app *dv, unsigned char *username, unsigned char *userPwd, int n);
+int dv_login(dv_app *dv, unsigned char *username, unsigned char *userPwd, int n);
 int dv_logout(dv_app *dv);
 
 int dv_createEntry(dv_app *dv, const char *name);

@@ -12,7 +12,12 @@ extern const char *categoryIdMap_fp;
 extern const char *pwd_fp;
 extern const char *dk_fp;
 
+void dv_initPersistence();
+void dv_setUserDirectory(char *user);
+
 int dv_initFiles(unsigned char *random);
+void dv_copyFiles(char *dstDir, char *srcDir);
+void dv_deleteFiles();
 
 int dv_load(dv_app *dv);
 int dv_save(dv_app *dv);

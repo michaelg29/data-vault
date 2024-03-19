@@ -1,8 +1,7 @@
 {
-    "root": "C:/src/data-vault",
-    "runDir": "test/run",
+    "root": "C:/Users/michael/src/data-vault",
+    "runDir": "bin",
     "directories": [
-        "test",
         "src",
         "src/controller",
         "src/lib/cmathematics",
@@ -12,6 +11,8 @@
         "src/lib/cmathematics/util",
         "src/lib/ds",
         "src/lib/util",
-        "src/view/terminal"
+        "src/view",
+        "src/view/terminal",
+        "src/view/test"
     ]
 }
