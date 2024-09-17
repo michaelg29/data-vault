@@ -86,7 +86,7 @@ int processCommand(strstream *cmd)
         {
             printHelp();
         }
-        else if (TOKEN_EQ("quit"))
+        else if (TOKEN_EQ("exit"))
         {
             if (!getConfirmation("Are you sure you want to quit?"))
             {
@@ -97,9 +97,9 @@ int processCommand(strstream *cmd)
             {
                 dv_logout(&app);
             }
-            retCode = DV_QUIT;
+            retCode = DV_EXIT;
         }
-        else if (TOKEN_EQ("cls"))
+        else if (TOKEN_EQ("cls") || TOKEN_EQ("clear"))
         {
             system("cls");
         }
@@ -183,7 +183,10 @@ int processCommand(strstream *cmd)
                 strstream_clear(&envStream);
 
                 // copy to clipboard
-                system("echo %dv-env%|clip");
+                char cmd[28];
+                sprintf(cmd, "echo|set /p=\"%%dv-env%%\"|clip");
+                printf("%s\n", cmd);
+                system((const char*)cmd);
 
                 // clear environment variable
                 putenv("dv-env=");
@@ -239,7 +242,7 @@ int terminal()
     strstream cmd;
     int res = DV_SUCCESS;
 
-    while (res != DV_QUIT)
+    while (res != DV_EXIT)
     {
         printf("> ");
 

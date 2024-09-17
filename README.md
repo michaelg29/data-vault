@@ -37,8 +37,8 @@ dv [-u <USERNAME>] [-penv <PASSWORD_ENV_NAME>] <DATA_COMMAND>
 ```
 
 ## Data commands
-* `quit`: Quit the application.
-* `cls`: Clear the terminal screen.
+* `exit`: Quit the application.
+* `cls` or `clear`: Clear the terminal screen.
 * `debug`: Switch on debugging information.
 * `logout`: Logout the current user.
 * `log`: Print all the entries and categories for the current user.
