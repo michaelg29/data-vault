@@ -33,8 +33,8 @@ void printHelp()
     printf("  If no options specified, opens a continuous terminal session.\n");
 
     printf("\nData commands:\n");
-    printf("  quit                             Quit the application.\n");
-    printf("  cls                              Clear the terminal screen.\n");
+    printf("  exit                             Quit the application.\n");
+    printf("  clear|cls                        Clear the terminal screen.\n");
     printf("  debug                            Switch on debugging information.\n");
     printf("  logout                           Logout the current user.\n");
     printf("  log                              Print all the entries and categories for the current user.\n");
@@ -97,6 +97,7 @@ int processCommand(strstream *cmd)
             {
                 dv_logout(&app);
             }
+
             retCode = DV_EXIT;
         }
         else if (TOKEN_EQ("cls") || TOKEN_EQ("clear"))
@@ -185,7 +186,6 @@ int processCommand(strstream *cmd)
                 // copy to clipboard
                 char cmd[28];
                 sprintf(cmd, "echo|set /p=\"%%dv-env%%\"|clip");
-                printf("%s\n", cmd);
                 system((const char*)cmd);
 
                 // clear environment variable
