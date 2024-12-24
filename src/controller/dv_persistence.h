@@ -3,6 +3,14 @@
 #ifndef DV_PERSISTENCE_H
 #define DV_PERSISTENCE_H
 
+#ifdef DV_CMP_RELEASE
+    #define GET_HOME_DIR() getenv("DV_HOME")
+    #define FREE_HOME_DIR(path) free(path)
+#else
+    #define GET_HOME_DIR() NULL
+    #define FREE_HOME_DIR(path)
+#endif
+
 extern const char *iv_fp;
 extern const char *data_fp;
 extern const char *data_tmp_fp;

@@ -44,19 +44,19 @@ const char *filePaths[EXTENDED_NO_FILES] = {
 
 void dv_initPersistence()
 {
-    char *envPath = getenv("DV_HOME");
+    char *envPath = GET_HOME_DIR();
     file_setDefaultPath(envPath);
-    free(envPath);
+    FREE_HOME_DIR(envPath);
 }
 
 void dv_setUserDirectory(char *user)
 {
     // get environment variable
-    char *envPath = getenv("DV_HOME");
+    char *envPath = GET_HOME_DIR();
 
     // concat user directory
     char path[512];
-    sprintf(path, "%s\\%s", envPath ? envPath : ".", user);
+    sprintf(path, "%s%s%s", envPath ? envPath : ".", PATH_SEPARATOR, user);
 
     if (!directoryExists(path))
     {
@@ -69,7 +69,7 @@ void dv_setUserDirectory(char *user)
 
     file_setDefaultPath(path);
 
-    conditionalFree(envPath, free);
+    FREE_HOME_DIR(envPath);
 }
 
 int dv_initFiles(unsigned char *random)
@@ -123,7 +123,13 @@ void dv_deleteFiles()
 {
     for (int i = 0; i < EXTENDED_NO_FILES; i++)
     {
-        strstream cmd = strstream_fromStr("del -f ");
+        strstream cmd = strstream_fromStr(
+        #ifdef DV_WINDOWS
+            "del -f "
+        #else
+            "rm"
+        #endif
+        );
         strstream_concat(&cmd, "%s 2>nul", filePaths[i]);
         system(cmd.str);
     }

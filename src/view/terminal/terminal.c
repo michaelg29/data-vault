@@ -12,7 +12,7 @@
 #include "../../lib/util/consoleio.h"
 #include "../../lib/util/fileio.h"
 
-dv_app app;
+dv_app terminal_app;
 int DV_DEBUG = 0;
 
 void printHelp()
@@ -93,16 +93,16 @@ int processCommand(strstream *cmd)
                 break;
             }
 
-            if (app.loggedIn)
+            if (terminal_app.loggedIn)
             {
-                dv_logout(&app);
+                dv_logout(&terminal_app);
             }
 
             retCode = DV_EXIT;
         }
         else if (TOKEN_EQ("cls") || TOKEN_EQ("clear"))
         {
-            system("cls");
+            system(DV_CLEAR);
         }
         else if (TOKEN_EQ("debug"))
         {
@@ -119,28 +119,28 @@ int processCommand(strstream *cmd)
         else if (TOKEN_EQ("logout"))
         {
             printf("Logging out\n");
-            retCode = dv_logout(&app);
+            retCode = dv_logout(&terminal_app);
         }
         else if (TOKEN_EQ("log"))
         {
-            dv_log(&app);
+            dv_log(&terminal_app);
         }
         else if (TOKEN_EQ("print"))
         {
-            dv_printDataFile(&app);
+            dv_printDataFile(&terminal_app);
         }
         else if (TOKEN_EQ("createAct"))
         {
             char *user = getMaskedInput("USERNAME> ");
             char *pwd = getMaskedInput("PASSWORD> ");
-            retCode = dv_createAccount(&app, user, pwd, strlen(pwd));
+            retCode = dv_createAccount(&terminal_app, user, pwd, strlen(pwd));
             free(pwd);
         }
         else if (TOKEN_EQ("login"))
         {
             char *user = getMaskedInput("USERNAME> ");
             char *pwd = getMaskedInput("PASSWORD> ");
-            retCode = dv_login(&app, user, pwd, strlen(pwd));
+            retCode = dv_login(&terminal_app, user, pwd, strlen(pwd));
             free(pwd);
         }
 
@@ -151,8 +151,8 @@ int processCommand(strstream *cmd)
         }
         else if (TOKEN_EQ("create"))
         {
-            printf("Create entry with name (%d): \"%s\"\n", strlen(tokens[1]), tokens[1]);
-            retCode = dv_createEntry(&app, tokens[1]);
+            printf("Create entry with name (%ld): \"%s\"\n", strlen(tokens[1]), tokens[1]);
+            retCode = dv_createEntry(&terminal_app, tokens[1]);
         }
 
         // commands with two arguments
@@ -164,7 +164,7 @@ int processCommand(strstream *cmd)
         {
             printf("Accessing data for %s under %s\n", argTokens[0], argTokens[1]);
             char *out = NULL;
-            retCode = dv_accessEntryData(&app, argTokens[0], argTokens[1], &out);
+            retCode = dv_accessEntryData(&terminal_app, argTokens[0], argTokens[1], &out);
             printf("Retrieved: %s\n", out);
             free(out);
         }
@@ -172,11 +172,11 @@ int processCommand(strstream *cmd)
         {
             printf("Copy data for %s under %s\n", argTokens[0], argTokens[1]);
             char *out = NULL;
-            retCode = dv_accessEntryData(&app, argTokens[0], argTokens[1], &out);
+            retCode = dv_accessEntryData(&terminal_app, argTokens[0], argTokens[1], &out);
 
             if (!retCode)
             {
-                strstream envStream = strstream_fromStr("dv-env=");
+                strstream envStream = strstream_fromStr("dvenv=");
 
                 // set environment variable
                 strstream_concat(&envStream, out);
@@ -184,9 +184,15 @@ int processCommand(strstream *cmd)
                 strstream_clear(&envStream);
 
                 // copy to clipboard
+            #ifdef DV_WINDOWS
                 char cmd[28];
-                sprintf(cmd, "echo|set /p=\"%%dv-env%%\"|clip");
+                sprintf(cmd, "echo|set /p=\"%%dvenv%%\"|clip");
                 system((const char*)cmd);
+            #else
+                char cmd[28];
+                sprintf(cmd, "echo $dvenv | DV_CLIP");
+                system((const char*)cmd);
+            #endif
 
                 // clear environment variable
                 putenv("dv-env=");
@@ -197,13 +203,13 @@ int processCommand(strstream *cmd)
         else if (TOKEN_EQ("del"))
         {
             printf("Deleting data for %s under %s\n", argTokens[0], argTokens[1]);
-            retCode = dv_deleteEntryData(&app, argTokens[0], argTokens[1]);
+            retCode = dv_deleteEntryData(&terminal_app, argTokens[0], argTokens[1]);
         }
         else if (TOKEN_EQ("set") && argN == 2)
         {
             // set data as masked input
             char *data = getMaskedInput("ENTER DATA> ");
-            retCode = dv_setEntryData(&app, argTokens[0], argTokens[1], data);
+            retCode = dv_setEntryData(&terminal_app, argTokens[0], argTokens[1], data);
             free(data);
         }
 
@@ -215,7 +221,7 @@ int processCommand(strstream *cmd)
         else if (TOKEN_EQ("set"))
         {
             printf("Setting data for %s under %s: %s\n", argTokens[0], argTokens[1], argTokens[2]);
-            retCode = dv_setEntryData(&app, argTokens[0], argTokens[1], argTokens[2]);
+            retCode = dv_setEntryData(&terminal_app, argTokens[0], argTokens[1], argTokens[2]);
         }
 
         freeStringList(tokens, n);
@@ -235,9 +241,9 @@ int processCommand(strstream *cmd)
 int terminal()
 {
     printf("Hello, terminal\n");
-    system("cls");
+    system(DV_CLEAR);
 
-    dv_init(&app);
+    dv_init(&terminal_app);
 
     strstream cmd;
     int res = DV_SUCCESS;
@@ -276,7 +282,7 @@ int terminal()
         strstream_clear(&cmd);
     }
 
-    return dv_kill(&app);
+    return dv_kill(&terminal_app);
 }
 
 int singleCmd(int argc, char **argv)
@@ -299,7 +305,7 @@ int singleCmd(int argc, char **argv)
             break;
         }
 
-        dv_init(&app);
+        dv_init(&terminal_app);
 
         // find username
         if (i < argc - 1 && ARGV_EQ("-u"))
@@ -331,7 +337,7 @@ int singleCmd(int argc, char **argv)
         // determine if we want to create an account
         if (ARGV_EQ("-createAct"))
         {
-            res = dv_createAccount(&app, user, pwd, strlen(pwd));
+            res = dv_createAccount(&terminal_app, user, pwd, strlen(pwd));
             if (res)
             {
                 printf("Could not create account\n");
@@ -347,7 +353,7 @@ int singleCmd(int argc, char **argv)
         }
 
         // construct login command
-        res = dv_login(&app, user, pwd, strlen(pwd));
+        res = dv_login(&terminal_app, user, pwd, strlen(pwd));
         free(pwd);
         if (res)
         {
@@ -390,7 +396,7 @@ int singleCmd(int argc, char **argv)
     } while (false);
     strstream_clear(&cmd);
 
-    res = dv_kill(&app);
+    res = dv_kill(&terminal_app);
 
     return res;
 }

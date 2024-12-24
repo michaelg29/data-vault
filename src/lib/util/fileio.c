@@ -3,7 +3,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <io.h>
+#ifdef DV_WINDOWS
+    #include <io.h>
+#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -131,7 +133,7 @@ bool file_openBlocks(file_struct *f, const char *path, const char *mode, unsigne
     char fullPath[512];
     if (defaultPath[0])
     {
-        sprintf(fullPath, "%s\\%s", defaultPath, path);
+        sprintf(fullPath, "%s%s%s", defaultPath, PATH_SEPARATOR, path);
     }
     else
     {
@@ -263,12 +265,6 @@ void file_close(file_struct *f)
 
 bool directoryExists(const char *path)
 {
-    if (_access(path, 0) == 0)
-    {
-        struct stat status;
-        stat(path, &status);
-
-        return (status.st_mode & S_IFDIR) != 0;
-    }
-    return false;
+    struct stat sb;
+    return stat(path, &sb) == 0 && S_ISDIR(sb.st_mode);
 }

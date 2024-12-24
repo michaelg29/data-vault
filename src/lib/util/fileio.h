@@ -6,6 +6,12 @@
 #ifndef FILEIO_H
 #define FILEIO_H
 
+#ifdef DV_WINDOWS
+    #define PATH_SEPARATOR "\\"
+#else
+    #define PATH_SEPARATOR "/"
+#endif
+
 typedef struct
 {
     FILE *fp;
