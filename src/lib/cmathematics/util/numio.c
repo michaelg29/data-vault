@@ -130,7 +130,7 @@ char *newSmallEndianStr(unsigned int val)
     memset(ret, 0, sizeof(unsigned int));
 
     smallEndianStr(val, ret, sizeof(unsigned int));
-    
+
     return ret;
 }
 

@@ -1,5 +1,7 @@
 #include "consoleio.h"
 
+#include "../../datavault.h"
+
 #include <stdio.h>
 #ifdef DV_WINDOWS
     #include <conio.h>

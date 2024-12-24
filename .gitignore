@@ -1,2 +1,5 @@
 *.dv
 src/**/*.o
+build/dv*
+bin_*
+

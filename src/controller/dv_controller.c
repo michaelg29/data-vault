@@ -609,7 +609,7 @@ int dv_deleteEntryData(dv_app *dv, const char *name, const char *category)
 
     char *enc = NULL;
     unsigned char *dec = NULL;
-    
+
     int retCode = DV_SUCCESS;
 
     do
@@ -832,7 +832,7 @@ int dv_deleteEntryData(dv_app *dv, const char *name, const char *category)
                     // increment writer IV
                     aes_incrementCounter(ivCopyOut, 1);
                     ivCopyOutInc++;
-                    
+
                     free(enc);
                     free(dec);
                 }

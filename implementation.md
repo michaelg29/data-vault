@@ -255,7 +255,7 @@ Input: name, category
 
         if completed
             break
-        
+
         previousBlock = currentBlock
         currentBlock = val(input[12:16), base = 256)
         if currentBlock = 0

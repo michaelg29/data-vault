@@ -209,7 +209,7 @@ void sha3_digest(sha3_context *ctx, unsigned char **out) {
     x = rowPos / 8; // final x coordinate
     tmp = (0x01ULL) << 0x3f;
     ctx->A[y][x] ^= tmp; // XOR into state
-    
+
     // SQUEEZING PHASE
     int cursor = 0; // cursor for the output string
     // allocate output

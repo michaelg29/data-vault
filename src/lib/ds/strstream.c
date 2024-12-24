@@ -146,11 +146,11 @@ void addStringToList(char ***list, int n, char *str, int strLen)
     char **tmp = malloc((n + 1) * sizeof(char *));
     memcpy(tmp, *list, n * sizeof(char *));
     free(*list);
-    
+
     tmp[n] = malloc(strLen + 1);
     memcpy(tmp[n], str, strLen);
     tmp[n][strLen] = 0;
-    
+
     *list = tmp;
 }
 

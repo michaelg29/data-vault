@@ -29,6 +29,7 @@ SRCROOT=../src
 
 ifeq ($(OS),Windows_NT)
     RM = del /F /Q /q 
+		CP = copy
     RMDIR = -RMDIR /S /Q
     MKDIR = -mkdir
     ERRIGNORE = 2>NUL || true
@@ -41,6 +42,7 @@ ifeq ($(OS),Windows_NT)
 		RUN_EXE=$(EXE_PATH)
 else
     RM = rm -rf 
+		CP = cp
     RMDIR = rm -rf 
     MKDIR = mkdir -p
     ERRIGNORE = 2>/dev/null
@@ -49,7 +51,7 @@ else
 		SRCS  := $(shell find ../src -type f -iname *.c)
 		DEPS  := $(shell find ../src -type f -iname *.h)
 		
-		EXE_PATH=$(EXE).o
+		EXE_PATH=$(EXE)
 		RUN_EXE=./$(EXE_PATH)
 endif
 
@@ -72,6 +74,9 @@ $(EXE): $(OBJS)
 
 run: $(EXE_PATH)
 	$(RUN_EXE)
+	
+release: $(EXE)
+	$(CP) $(EXE_PATH) ../bin/$(EXE_PATH)
 
 .PHONY: clean
 
