@@ -48,8 +48,8 @@ else
     ERRIGNORE = 2>/dev/null
     SEP=/
 		VPATH := $(subst $(space),:,$(shell find ../src -type d))
-		SRCS  := $(shell find ../src -type f -iname *.c)
-		DEPS  := $(shell find ../src -type f -iname *.h)
+		SRCS  := $(shell find ../src -type f -iregex [.]*\/[^.]*\.c)
+		DEPS  := $(shell find ../src -type f -iregex [.]*\/[^.]*\.h)
 		
 		EXE_PATH=$(EXE)
 		RUN_EXE=./$(EXE_PATH)

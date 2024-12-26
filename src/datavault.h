@@ -16,13 +16,21 @@
     #undef DV_UNIX
 #endif
 
+#ifdef DV_MACINTOSH
+    #undef DV_MACINTOSH
+#endif
+
 #ifdef _WIN32
     #define DV_WINDOWS
 #else
     #ifdef _WIN64
         #define DV_WINDOWS
     #else
-        #define DV_UNIX
+        #ifdef __MACH__
+            #define DV_MACINTOSH
+        #else
+            #define DV_UNIX
+        #endif
     #endif
 #endif
 

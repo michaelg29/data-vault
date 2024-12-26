@@ -184,15 +184,17 @@ int processCommand(strstream *cmd)
                 strstream_clear(&envStream);
 
                 // copy to clipboard
+                const char *cmd =
             #ifdef DV_WINDOWS
-                char cmd[28];
-                sprintf(cmd, "echo|set /p=\"%%dvenv%%\"|clip");
-                system((const char*)cmd);
+                "echo|set /p=\"%dvenv%\"|clip";
             #else
-                char cmd[28];
-                sprintf(cmd, "echo $dvenv | DV_CLIP");
-                system((const char*)cmd);
+                #ifdef DV_MACINTOSH
+                    "echo $dvenv | pbcopy";
+                #else
+                    "echo $dvenv | xcopy";
+                #endif
             #endif
+                system(cmd);
 
                 // clear environment variable
                 putenv("dv-env=");

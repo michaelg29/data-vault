@@ -2,4 +2,5 @@
 src/**/*.o
 build/dv*
 bin_*
+._*
 
